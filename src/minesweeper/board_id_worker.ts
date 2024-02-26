@@ -91,13 +91,16 @@ export class BoardIdWorker {
   constructor() {
     info('[BoardIdWorker] Starting Board ID worker');
     let url: string;
-    if (inlinedWorkerCode) {
+    if (
+      !inlinedWorkerCode.startsWith('<<') &&
+      !inlinedWorkerCode.endsWith('>>')
+    ) {
       // dist mode - use the inlined worker code directly
       const blob = new Blob([inlinedWorkerCode], { type: 'text/javascript' });
       url = URL.createObjectURL(blob);
     } else {
       // deveoper mode - pull in the library directly
-      url = '../lib/minesweeper/board_id_worker_entry.js';
+      url = '../lib/ui/board_id_worker_entry.js';
     }
     this.worker = new Worker(url, {
       type: 'module',
@@ -332,4 +335,4 @@ function getBoardInfo(board: MineBoard): KnownBoardInfo {
 }
 
 /** This is populated when creating the 'dist' */
-const inlinedWorkerCode = '';
+const inlinedWorkerCode = '<<BOARD_ID_WORKER_ENTRY>>';

@@ -3,8 +3,8 @@ import { decodeBase64, encodeBase64 } from "../util/base64.js";
 import { decodeValue, encodeValueToBitSet } from "../util/compression/arithmetic.js";
 import { BitSetWriter } from "../util/io.js";
 import { trace } from "../util/logging.js";
-import { DecodeMessageResponse, MessageRequest, StatsMessageResponse } from "./board_id_worker.js";
-import { MineBoardCoder, assertBoardInfo } from "./minesweeper_storage.js";
+import { DecodeMessageResponse, MessageRequest, StatsMessageResponse } from "../minesweeper/board_id_worker.js";
+import { MineBoardCoder, assertBoardInfo } from "../minesweeper/minesweeper_storage.js";
 
 /**
  * window is undefined when this is loaded as a worker module, and onmessage is

@@ -8,7 +8,7 @@
     "build": "tsc",
     "clean": "rm -rf ./lib/* ./dist/*",
     "prettier-format": "prettier --config .prettierrc '**/*.ts' '**/*.html' '**/*.css' --write",
-    "dist": "npx esbuild ./src/ui/index.ts ./src/ui/sidebar.ts --bundle --minify --outdir=dist && cp ./ui/icon.svg dist/ && npx css-minify -f ./ui/minestyle.css -o dist/ && mv dist/minestyle.min.css dist/minestyle.css && npx html-minifier-terser --collapse-whitespace --remove-comments --minify-js true ./ui/minesweeper.html -o ./dist/minesweeper.html && sed -i -e 's|\\.\\./lib/ui/|./|g' ./dist/minesweeper.html"
+    "dist": "npx esbuild ./src/ui/index.ts ./src/ui/sidebar.ts ./src/ui/board_id_worker_entry.ts --bundle --minify --outdir=dist && cp ./ui/icon.svg dist/ && npx css-minify -f ./ui/minestyle.css -o dist/ && mv dist/minestyle.min.css dist/minestyle.css && npx html-minifier-terser --collapse-whitespace --remove-comments --minify-js true ./ui/minesweeper.html -o ./dist/minesweeper.html && sed -i -e 's|\\.\\./lib/ui/|./|g' ./dist/minesweeper.html"
   },
   "keywords": [],
   "author": "",
