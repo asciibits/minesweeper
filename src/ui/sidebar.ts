@@ -2,8 +2,6 @@ const win: Window | undefined =
   typeof window === 'undefined' ? undefined : window;
 
 if (win) {
-  const sideBar = document.getElementById('sidebar') as HTMLFieldSetElement;
-
   const expertChip = document.getElementById('expert_chip') as HTMLInputElement;
   const beginnerChip = document.getElementById(
     'beginner_chip'
@@ -74,4 +72,24 @@ if (win) {
       }
     })
   );
+
+  const body = document.getElementsByTagName('body')[0];
+  const systemColor = document.getElementById(
+    'system_color'
+  ) as HTMLInputElement;
+  const lightColor = document.getElementById('light_color') as HTMLInputElement;
+  const darkColor = document.getElementById('dark_color') as HTMLInputElement;
+
+  systemColor.addEventListener('click', () => {
+    body.classList.remove('dark');
+    body.classList.remove('light');
+  });
+  lightColor.addEventListener('click', () => {
+    body.classList.remove('dark');
+    body.classList.add('light');
+  });
+  darkColor.addEventListener('click', () => {
+    body.classList.remove('light');
+    body.classList.add('dark');
+  });
 }

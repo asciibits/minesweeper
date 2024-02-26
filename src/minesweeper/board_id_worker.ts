@@ -88,7 +88,7 @@ export class BoardIdWorker {
     boardId: string;
   };
 
-  constructor(pathToWorker = '') {
+  constructor() {
     info('[BoardIdWorker] Starting Board ID worker');
     let url: string;
     if (inlinedWorkerCode) {
