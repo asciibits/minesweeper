@@ -78,7 +78,6 @@ export function initUi(window: Window) {
       if (!attributes?.['BUILDING'] && !attributes?.['EXPOSING']) {
         boardIdWorker.requestEncode(board);
       }
-
     }
     boardIdWorker.addEncodeListener({
       handleEncodeResponse: (id: string) => {

@@ -57,19 +57,21 @@ if (win) {
       widthElement.dispatchEvent(new Event('change'));
     }
   });
-  [widthElement, heightElement, mineCountElement].forEach(e => e.addEventListener('change', () => {
-    const width = widthElement.value;
-    const height = heightElement.value;
-    const mineCount = mineCountElement.value;
+  [widthElement, heightElement, mineCountElement].forEach(e =>
+    e.addEventListener('change', () => {
+      const width = widthElement.value;
+      const height = heightElement.value;
+      const mineCount = mineCountElement.value;
 
-    if (height === '16' && width === '30' && mineCount === '99') {
-      expertChip.checked = true;
-    } else if (height === '16' && width === '16' && mineCount === '40') {
-      intermediateChip.checked = true;
-    } else if (height === '9' && width === '9' && mineCount === '10') {
-      beginnerChip.checked = true;
-    } else {
-      customChip.checked = true;
-    }
-  }))
+      if (height === '16' && width === '30' && mineCount === '99') {
+        expertChip.checked = true;
+      } else if (height === '16' && width === '16' && mineCount === '40') {
+        intermediateChip.checked = true;
+      } else if (height === '9' && width === '9' && mineCount === '10') {
+        beginnerChip.checked = true;
+      } else {
+        customChip.checked = true;
+      }
+    })
+  );
 }
