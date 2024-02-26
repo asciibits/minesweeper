@@ -1,5 +1,4 @@
-import { decodeBase64, encodeBase64 } from '../util/base64.js';
-import { BitSet, BitSetWriter } from '../util/io.js';
+import { BitSet } from '../util/io.js';
 import { error, info, trace } from '../util/logging.js';
 import { assert } from '../util/assert.js';
 import {
@@ -12,15 +11,10 @@ import {
 } from './minesweeper.js';
 import {
   KnownBoardInfo,
-  MineBoardCoder,
   OpenState,
   assertBoardInfo,
 } from './minesweeper_storage.js';
 import { Stats } from './stats.js';
-import {
-  decodeValue,
-  encodeValueToBitSet,
-} from '../util/compression/arithmetic.js';
 
 export interface BitSetInfo {
   buffer: number[];
@@ -94,10 +88,18 @@ export class BoardIdWorker {
     boardId: string;
   };
 
-  constructor(pathToWorker = '../lib/minesweeper/') {
+  constructor(pathToWorker = '') {
     info('[BoardIdWorker] Starting Board ID worker');
-    // this.worker = new Worker(pathToWorker + 'board_id_worker.js', {
-    this.worker = new Worker(pathToWorker + 'board_id_worker.js', {
+    let url: string;
+    if (inlinedWorkerCode) {
+      // dist mode - use the inlined worker code directly
+      const blob = new Blob([inlinedWorkerCode], { type: 'text/javascript' });
+      url = URL.createObjectURL(blob);
+    } else {
+      // deveoper mode - pull in the library directly
+      url = '../lib/minesweeper/board_id_worker_entry.js';
+    }
+    this.worker = new Worker(url, {
       type: 'module',
       name: 'BoardIdWorker',
     });
@@ -329,57 +331,5 @@ function getBoardInfo(board: MineBoard): KnownBoardInfo {
   return { width, height, elapsedTime, cellData };
 }
 
-/**
- * window is undefined when this is loaded as a worker module, and onmessage is
- * undefined when loaded as a node test
- */
-if (typeof window === 'undefined' && typeof onmessage !== 'undefined') {
-  /** Set up the board message handling */
-  const boardCoder = new MineBoardCoder();
-
-  // setLoggingLevel(LoggingLevel.TRACE);
-  onmessage = (e: MessageEvent) => {
-    trace('Processing web worker event: %o', e);
-    const message = e.data as Partial<MessageRequest>;
-    switch (message.messageType) {
-      case 'ENCODE': {
-        let { boardInfo } = message;
-        assertBoardInfo(boardInfo);
-        const boardId = encodeBase64(
-          encodeValueToBitSet(boardInfo, boardCoder).toReader()
-        );
-        postMessage({
-          messageType: 'ENCODE',
-          boardId,
-        });
-        break;
-      }
-      case 'DECODE': {
-        const { boardId } = message;
-        assert(
-          typeof boardId === 'string',
-          'Invalid board id: ' + JSON.stringify(boardId)
-        );
-        const writer = new BitSetWriter();
-        decodeBase64(boardId!, writer);
-        const boardInfo = decodeValue(writer.bitset.toReader(), boardCoder);
-        postMessage({
-          messageType: 'DECODE',
-          boardInfo,
-        } as DecodeMessageResponse);
-        break;
-      }
-      case 'STATS': {
-        const { boardInfo } = message;
-        assertBoardInfo(boardInfo);
-        postMessage({
-          messageType: 'STATS',
-          stats: {}, // getStats(boardInfo),
-        } as StatsMessageResponse);
-        break;
-      }
-      default:
-        throw new Error('Unknown message type: ' + message.messageType);
-    }
-  };
-}
+/** This is populated when creating the 'dist' */
+const inlinedWorkerCode = '';
