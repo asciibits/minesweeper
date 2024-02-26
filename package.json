@@ -5,8 +5,10 @@
   "main": "index.js",
   "scripts": {
     "test": "tsc && node --no-warnings=ExperimentalWarning --loader ts-node/esm ./node_modules/jasmine/bin/jasmine.js --config=./spec/support/jasmine.json --seed=${RANDOM}",
-    "clean": "rm -rf ./lib/*",
-    "prettier-format": "prettier --config .prettierrc '**/*.ts' '**/*.html' '**/*.css' --write"
+    "build": "tsc",
+    "clean": "rm -rf ./lib/* ./dist/*",
+    "prettier-format": "prettier --config .prettierrc '**/*.ts' '**/*.html' '**/*.css' --write",
+    "dist": "npx esbuild ./src/ui/index.ts ./src/ui/sidebar.ts --bundle --minify --outdir=dist && cp ./ui/icon.svg dist/ && npx css-minify -f ./ui/minestyle.css -o dist/ && mv dist/minestyle.min.css dist/minestyle.css && npx html-minifier-terser --collapse-whitespace --remove-comments --minify-js true ./ui/minesweeper.html -o ./dist/minesweeper.html && "
   },
   "keywords": [],
   "author": "",
@@ -26,5 +28,9 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
   },
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "css-minify": "^2.0.0",
+    "html-minifier-terser": "^7.2.0"
+  }
 }
