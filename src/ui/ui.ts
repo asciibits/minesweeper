@@ -75,7 +75,7 @@ export function initUi(window: Window) {
     });
 
     function requestBoardEncode(attributes?: Record<string, unknown>) {
-      if (!attributes?.['BUILDING'] && !attributes?.['EXPOSING']) {
+      if (!attributes?.['DECODING'] && !attributes?.['EXPOSING']) {
         boardIdWorker.requestEncode(board);
       }
     }
@@ -148,12 +148,12 @@ export function initUi(window: Window) {
               if (isMine && !cell.isFlagged()) {
                 if (cell.isOpened()) {
                   // this is the source bomm - mark it wrong
-                  cell.setWrong();
+                  cell.setWrong(true, { EXPOSING: true });
                 } else {
                   unflaggedMines.add(cell);
                 }
               } else if (cell.isFlagged() && !isMine) {
-                cell.setWrong();
+                cell.setWrong(true, { EXPOSING: true });
               }
             }
             // set to "building" mode to supress the board-id generation while
@@ -183,7 +183,7 @@ export function initUi(window: Window) {
                 e.value === OpeningRestrictions[getBoardConfig().openingConfig]
             )
             .forEach(e => (e.checked = true));
-          if (!e.attributes?.['BUILDING']) {
+          if (!e.attributes?.['DECODING']) {
             updateBoardIdDisplay('');
           }
           break;

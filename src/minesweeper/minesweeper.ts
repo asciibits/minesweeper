@@ -406,18 +406,18 @@ export class MineBoard {
             this.openMines++;
             if (newExplode) {
               this.stopClock();
-              this.fireEvent(BoardEventType.EXPLODE);
+              this.fireEvent(BoardEventType.EXPLODE, e.attributes);
             }
           } else {
             this.cellsRemaining--;
             if (!this.started) {
               this.started = true;
               this.startClock();
-              this.fireEvent(BoardEventType.FIRST_MOVE);
+              this.fireEvent(BoardEventType.FIRST_MOVE, e.attributes);
             }
             if (!this.cellsRemaining) {
               this.stopClock();
-              this.fireEvent(BoardEventType.COMPLETE);
+              this.fireEvent(BoardEventType.COMPLETE, e.attributes);
             }
           }
           break;
@@ -427,19 +427,19 @@ export class MineBoard {
           } else {
             this.minesRemaining++;
           }
-          this.fireEvent(BoardEventType.MINE_COUNT_CHANGED);
+          this.fireEvent(BoardEventType.MINE_COUNT_CHANGED, e.attributes);
           break;
         case CellEventType.CLOSE:
           if (c.isMine()) {
             this.openMines--;
             if (!this.openMines) {
               this.startClock();
-              this.fireEvent(BoardEventType.UNEXPLODE);
+              this.fireEvent(BoardEventType.UNEXPLODE, e.attributes);
             }
           } else {
             if (!this.cellsRemaining++) {
               this.startClock();
-              this.fireEvent(BoardEventType.UNCOMPLETE);
+              this.fireEvent(BoardEventType.UNCOMPLETE, e.attributes);
             }
           }
           break;

@@ -244,32 +244,31 @@ export class BoardIdWorker {
         const openMines = new Set<Cell>();
         for (let i = 0; i < boardInfo.cellData.length; i++) {
           const cell = board.getCell(i);
-          cell.setWrong(false);
+          cell.setWrong(false, { DECODING: true });
           switch (boardInfo.cellData[i].openState) {
             case OpenState.OPENED:
               if (cell.isMine()) {
                 openMines.add(cell);
               } else {
-                cell.openNoExpand();
+                cell.openNoExpand({ DECODING: true });
               }
               break;
             case OpenState.FLAGGED:
-              cell.close();
-              cell.flag();
+              cell.close({ DECODING: true });
+              cell.flag(true, { DECODING: true });
               break;
             default:
-              cell.close();
-              cell.flag(false);
+              cell.close({ DECODING: true });
+              cell.flag(false, { DECODING: true });
               break;
           }
         }
         // open mines after the rest of the board is build (allows the UI to
         // have everything else properly rendered before showing the bomb
         // status)
-        console.log('showing mines: %o', openMines.size);
         board.openGroup(openMines, { DECODING: true });
         if (needsReset) {
-          board.setTimeElapsed(boardInfo.elapsedTime);
+          board.setTimeElapsed(boardInfo.elapsedTime, { DECODING: true });
         }
       },
     };
