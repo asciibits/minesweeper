@@ -520,6 +520,10 @@ export class MineBoard {
     return this.started && this.cellsRemaining <= 0;
   }
 
+  isStarted() {
+    return this.started;
+  }
+
   getMinesRemaining() {
     return this.minesRemaining;
   }

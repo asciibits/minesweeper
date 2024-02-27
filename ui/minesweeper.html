@@ -3,27 +3,38 @@
   <head>
     <title>Minesweeper Now</title>
     <link rel="stylesheet" href="./minestyle.css" />
-    <script type="module" src="../lib/ui/index.js"></script>
     <script type="module" src="../lib/ui/sidebar.js"></script>
+    <script type="module" src="../lib/ui/index.js"></script>
     <link rel="icon" href="./icon.svg" type="image/svg+xml" />
   </head>
   <body>
     <fieldset id="sidebar">
       <div class="config_icon"></div>
       <span class="section color_palette">
-        <input id="system_color" type="radio" name="color_palette" checked />
+        <input
+          id="system_color"
+          type="radio"
+          name="color_palette"
+          value="SYSTEM"
+          checked
+        />
         <div class="color_palette_wrapper">
           <label for="system_color" class="color_palette_item system_icon"
             >System Color</label
           >
         </div>
-        <input id="light_color" type="radio" name="color_palette" />
+        <input
+          id="light_color"
+          type="radio"
+          name="color_palette"
+          value="LIGHT"
+        />
         <div class="color_palette_wrapper">
           <label for="light_color" class="color_palette_item light_icon"
             >Light</label
           >
         </div>
-        <input id="dark_color" type="radio" name="color_palette" />
+        <input id="dark_color" type="radio" name="color_palette" value="DARK" />
         <div class="color_palette_wrapper">
           <label for="dark_color" class="color_palette_item dark_icon"
             >Dark</label
@@ -49,13 +60,29 @@
           </div>
         </span>
       </span>
-      <input id="expert_chip" type="radio" name="board_size" checked />
+      <input
+        id="expert_chip"
+        type="radio"
+        name="board_size"
+        value="EXPERT"
+        checked
+      />
       <label class="chip" for="expert_chip">Expert</label>
-      <input id="intermediate_chip" type="radio" name="board_size" />
+      <input
+        id="intermediate_chip"
+        type="radio"
+        name="board_size"
+        value="INERMEDIATE"
+      />
       <label class="chip" for="intermediate_chip">Intermediate </label>
-      <input id="beginner_chip" type="radio" name="board_size" />
+      <input
+        id="beginner_chip"
+        type="radio"
+        name="board_size"
+        value="BEGINNER"
+      />
       <label class="chip" for="beginner_chip">Beginner </label>
-      <input id="custom_chip" type="radio" name="board_size" />
+      <input id="custom_chip" type="radio" name="board_size" value="CUSTOM" />
       <label class="chip" for="custom_chip">Custom </label>
       <label for="width" class="bare">width</label>
       <input id="width" type="number" min="1" value="30" />

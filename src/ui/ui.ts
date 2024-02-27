@@ -16,14 +16,14 @@ import { BoardIdWorker } from '../minesweeper/board_id_worker.js';
 
 let widthElement: HTMLInputElement;
 let heightElement: HTMLInputElement;
-let mineElement: HTMLInputElement;
+let mineCountElement: HTMLInputElement;
 let openingConfigElements: HTMLInputElement[];
 let mineFieldBoard: HTMLElement;
 
 let boardIdWorker: BoardIdWorker;
 
 export function initUi(window: Window) {
-  window.onload = function () {
+  window.addEventListener('load', () => {
     // setLoggingLevel(LoggingLevel.TRACE);
     boardIdWorker = new BoardIdWorker();
 
@@ -31,15 +31,15 @@ export function initUi(window: Window) {
     heightElement = window.document.getElementById(
       'height'
     ) as HTMLInputElement;
-    mineElement = window.document.getElementById(
+    mineCountElement = window.document.getElementById(
       'mine_count'
     ) as HTMLInputElement;
-    const openingConfigElement = window.document.getElementById(
+    const sideBar = window.document.getElementById(
       'sidebar'
     ) as HTMLFieldSetElement;
 
     openingConfigElements = Array.from(
-      openingConfigElement.querySelectorAll('[name=initial_click]')
+      sideBar.querySelectorAll('[name=initial_click]')
     ).filter((e): e is HTMLInputElement => e instanceof HTMLInputElement);
 
     mineFieldBoard = window.document.getElementById('minefield') as HTMLElement;
@@ -176,7 +176,7 @@ export function initUi(window: Window) {
           createBoard(mineFieldBoard, board, analyzer);
           widthElement.value = String(board.getView().width);
           heightElement.value = String(board.getView().height);
-          mineElement.value = String(board.getView().mineCount);
+          mineCountElement.value = String(board.getView().mineCount);
           openingConfigElements
             .filter(
               e =>
@@ -205,7 +205,28 @@ export function initUi(window: Window) {
         logError(e);
       }
     }
-    openingConfigElement.addEventListener('change', rebuildGame);
+    sideBar.addEventListener('change', e => {
+      const element = e.target as HTMLElement;
+      const name = element?.attributes.getNamedItem('name')?.value;
+
+      if (name === 'color_palette') {
+        // changes in color palette don't affect the game
+        return;
+      }
+      const { width, height, mines, openingConfig } = getBoardConfig();
+      if (
+        board.getView().width !== width ||
+        board.getView().height !== height ||
+        board.getView().mineCount !== mines
+      ) {
+        // legit change to the game
+        rebuildGame();
+      }
+      if (!board.isStarted() && name === 'initial_click') {
+        // the opening style changed - rebuild
+        rebuildGame();
+      }
+    });
 
     const resetButtonListener = (e: MouseEvent) => {
       try {
@@ -249,7 +270,7 @@ export function initUi(window: Window) {
     } else {
       rebuildGame();
     }
-  };
+  });
 }
 
 function createBoard(
@@ -461,7 +482,7 @@ class DigitalDisplay {
 function getBoardConfig() {
   let width = widthElement.valueAsNumber;
   let height = heightElement.valueAsNumber;
-  let mines = mineElement.valueAsNumber;
+  let mines = mineCountElement.valueAsNumber;
   const openingConfigValue = openingConfigElements.find(e => e.checked)
     ?.value as keyof typeof OpeningRestrictions;
   let openingConfig =
