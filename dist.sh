@@ -2,9 +2,10 @@
 
 npx esbuild ./src/ui/index.ts ./src/ui/sidebar.ts ./src/ui/board_id_worker_entry.ts --bundle --minify --outdir=dist
 cp ./ui/icon.svg dist/
+cp ./ui/favicon.ico dist/
 npx css-minify -f ./ui/minestyle.css -o dist/
 mv dist/minestyle.min.css dist/minestyle.css
-npx html-minifier-terser --collapse-whitespace --remove-comments --minify-js true ./ui/minesweeper.html -o ./dist/minesweeper.html
+npx html-minifier-terser --collapse-whitespace --remove-comments --minify-js true ./ui/minesweeper.html -o ./dist/index.html
 sed -i -e 's|\.\./lib/ui/|./|g' ./dist/minesweeper.html
 
 
