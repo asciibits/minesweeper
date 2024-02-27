@@ -6,7 +6,7 @@ cp ./ui/favicon.ico docs/
 npx css-minify -f ./ui/minestyle.css -o docs/
 mv docs/minestyle.min.css docs/minestyle.css
 npx html-minifier-terser --collapse-whitespace --remove-comments --minify-js true ./ui/minesweeper.html -o ./docs/index.html
-sed -i -e 's|\.\./lib/ui/|./|g' ./docs/minesweeper.html
+sed -i -e 's|\.\./lib/ui/|./|g' ./docs/index.html
 
 
 sed -i -e "s/['\"]<<BOARD_ID_WORKER_ENTRY>>[\'\"]/\n<<BOARD_ID_WORKER_ENTRY>>\n/" ./docs/index.js
