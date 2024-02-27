@@ -404,6 +404,9 @@ export class MineBoard {
           if (c.isMine()) {
             const newExplode = this.openMines === 0;
             this.openMines++;
+            if (!e.attributes?.['OPEN_GROUP']) {
+              this.fireEvent(BoardEventType.CELLS_OPENED, e.attributes);
+            }
             if (newExplode) {
               this.stopClock();
               this.fireEvent(BoardEventType.EXPLODE, e.attributes);
@@ -414,6 +417,9 @@ export class MineBoard {
               this.started = true;
               this.startClock();
               this.fireEvent(BoardEventType.FIRST_MOVE, e.attributes);
+            }
+            if (!e.attributes?.['OPEN_GROUP']) {
+              this.fireEvent(BoardEventType.CELLS_OPENED, e.attributes);
             }
             if (!this.cellsRemaining) {
               this.stopClock();
@@ -433,11 +439,14 @@ export class MineBoard {
           if (c.isMine()) {
             this.openMines--;
             if (!this.openMines) {
+              this.boardEnded = 0;
               this.startClock();
               this.fireEvent(BoardEventType.UNEXPLODE, e.attributes);
             }
           } else {
             if (!this.cellsRemaining++) {
+              console.log('uncompleting');
+              this.boardEnded = 0;
               this.startClock();
               this.fireEvent(BoardEventType.UNCOMPLETE, e.attributes);
             }
@@ -566,7 +575,9 @@ export class MineBoard {
       this.boardEnded === 0 &&
       this.clockEventInterval > 0
     ) {
-      this.boardStarted = Date.now();
+      if (!this.boardStarted) {
+        this.boardStarted = Date.now();
+      }
       this.fireEvent(BoardEventType.TIME_ELAPSED, attributes);
       this.timerId = setInterval(() => {
         this.fireEvent(BoardEventType.TIME_ELAPSED, attributes);
@@ -621,7 +632,7 @@ export class MineBoard {
 
   dispose(attributes?: Record<string, unknown>) {
     for (const cell of this.cells) {
-      cell.dispose();
+      cell.dispose(attributes);
     }
     this.fireEvent(BoardEventType.DISPOSE, attributes);
     this.listeners.length = 0;
@@ -631,7 +642,7 @@ export class MineBoard {
   openGroup(group: IterType<Cell>, attributes?: Record<string, unknown>) {
     for (const cell of asIterable(group)) {
       if (!cell.isOpened()) {
-        cell.openNoExpand();
+        cell.openNoExpand({ ...attributes, OPEN_GROUP: true });
       }
     }
     this.fireEvent(BoardEventType.CELLS_OPENED, attributes);

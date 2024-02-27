@@ -2,6 +2,7 @@ import { BitSet } from '../util/io.js';
 import { error, info, trace } from '../util/logging.js';
 import { assert } from '../util/assert.js';
 import {
+  BoardEventType,
   Cell,
   CellVisibleState,
   MineBoard,
@@ -269,6 +270,10 @@ export class BoardIdWorker {
         board.openGroup(openMines, { DECODING: true });
         if (needsReset) {
           board.setTimeElapsed(boardInfo.elapsedTime, { DECODING: true });
+        }
+        // force a TIME event for completed game
+        if (board.isComplete() || board.isExploded()) {
+          board.fireEvent(BoardEventType.TIME_ELAPSED, { DECODING: true });
         }
       },
     };
