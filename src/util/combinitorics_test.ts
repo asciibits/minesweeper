@@ -3,7 +3,7 @@ import {
   combinations,
   lexicalOrdering,
 } from './combinitorics.js';
-import { testRandom } from './random.js';
+import {testRandom} from './random.js';
 
 describe('combinations', () => {
   it('rejects invalid input', () => {
@@ -134,7 +134,7 @@ describe('Lexical Ordering', () => {
       if (
         lexical !== lexicalOrdering(bitmapFromLexicalOrdering(lexical, n, k), n)
       ) {
-        console.log('Round trip failed:\n%o', { n, k, lexical });
+        console.log('Round trip failed:\n%o', {n, k, lexical});
         throw new Error('Round trip lexical ordering failure. Check logs.');
       }
     }

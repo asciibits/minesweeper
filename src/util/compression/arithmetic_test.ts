@@ -1,6 +1,6 @@
-import { BitSet, BitSetWriter } from '../io.js';
-import { testRandom } from '../random.js';
-import { bitset } from '../test_utils.js';
+import {BitSet, BitSetWriter} from '../io.js';
+import {testRandom} from '../random.js';
+import {bitset} from '../test_utils.js';
 import {
   ArithmeticModel,
   BitExtendedCoder,
@@ -13,8 +13,8 @@ import {
   encodeToBitSet,
   encodeValueToBitSet,
 } from './arithmetic.js';
-import { combinations } from '../combinitorics.js';
-import { reverseBits } from '../utils.js';
+import {combinations} from '../combinitorics.js';
+import {reverseBits} from '../utils.js';
 
 describe('Arithmetic Coding', () => {
   describe('with trailing bits', () => {
@@ -544,7 +544,8 @@ describe('Arithmetic Coding', () => {
       //   let decoded: BitSet | undefined = undefined;
       //   try {
       //     const coder = new CountCoder(n, z);
-      //     encoded = encodeToBitSet(input.toReader(), coder, new BitSetWriter());
+      //     encoded = encodeToBitSet(input.toReader(), coder,
+      //  new BitSetWriter());
       //     decoded = decodeToBitSet(
       //       encoded.toReader(),
       //       coder,
@@ -983,9 +984,9 @@ describe('Arithmetic Coding', () => {
         new BitSet(0b11, 2),
       ];
       const trinary = new ArithmeticModel([
-        { value: values[0], weight: 1 },
-        { value: values[1], weight: 1 },
-        { value: values[2], weight: 1 },
+        {value: values[0], weight: 1},
+        {value: values[1], weight: 1},
+        {value: values[2], weight: 1},
       ]);
       // Verify that each
       let v2 = 0;

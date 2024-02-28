@@ -1,4 +1,4 @@
-import { BitSet, BitSetWriter, BitReader } from './io.js';
+import {BitSet, BitSetWriter, BitReader} from './io.js';
 
 export function cleanState<T extends Record<string, unknown>>(
   init: () => T,
@@ -8,7 +8,7 @@ export function cleanState<T extends Record<string, unknown>>(
     // clear state before every test case.
     for (const prop of Object.getOwnPropertyNames(state)) {
       /* eslint-disable @typescript-eslint/no-explicit-any */
-      delete (state as { [k: string]: any })[prop];
+      delete (state as {[k: string]: any})[prop];
       /* eslint-enable @typescript-eslint/no-explicit-any */
     }
     Object.assign(state, init());

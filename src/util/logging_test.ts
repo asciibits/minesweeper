@@ -1,4 +1,4 @@
-import { LoggingLevel, setLoggingLevel } from './logging.js';
+import {LoggingLevel, setLoggingLevel} from './logging.js';
 
 /** Global beforeEach to disable logging */
 beforeEach(() => {

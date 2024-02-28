@@ -146,7 +146,7 @@ if (win) {
         : minePossibleElement.checked
           ? 'ANY'
           : 'NO_MINE';
-      return { colorPalette, width, height, mineCount, initialClick };
+      return {colorPalette, width, height, mineCount, initialClick};
     }
 
     function setSettings(sidebarState?: SidebarState) {

@@ -12,7 +12,7 @@ import {
   CellEvent,
   BoardEvent,
 } from '../minesweeper/minesweeper.js';
-import { BoardIdWorker } from '../minesweeper/board_id_worker.js';
+import {BoardIdWorker} from '../minesweeper/board_id_worker.js';
 
 let widthElement: HTMLInputElement;
 let heightElement: HTMLInputElement;
@@ -90,7 +90,7 @@ export function initUi(window: Window) {
     (window as unknown as Record<string, unknown>)['board'] = board;
     boardIdWorker.addDecodeToBoardListener(board);
 
-    const analyzer: SimpleAnalyzer | undefined = undefined; //new SimpleAnalyzer(board);
+    const analyzer: SimpleAnalyzer | undefined = undefined;
 
     // get the board pushing time-elapsed events every 200ms
     board.setClockEventInterval(200);
@@ -128,7 +128,7 @@ export function initUi(window: Window) {
           setTimeout(() => {
             for (const cell of board.getAllCells()) {
               if (!cell.isOpened()) {
-                cell.flag(true, { EXPOSING: true });
+                cell.flag(true, {EXPOSING: true});
               }
             }
             resetButton.innerText = '😎';
@@ -148,17 +148,17 @@ export function initUi(window: Window) {
               if (isMine && !cell.isFlagged()) {
                 if (cell.isOpened()) {
                   // this is the source bomm - mark it wrong
-                  cell.setWrong(true, { EXPOSING: true });
+                  cell.setWrong(true, {EXPOSING: true});
                 } else {
                   unflaggedMines.add(cell);
                 }
               } else if (cell.isFlagged() && !isMine) {
-                cell.setWrong(true, { EXPOSING: true });
+                cell.setWrong(true, {EXPOSING: true});
               }
             }
             // set to "building" mode to supress the board-id generation while
             // exposing the mines
-            board.openGroup(unflaggedMines, { EXPOSING: true });
+            board.openGroup(unflaggedMines, {EXPOSING: true});
             resetButton.innerText = '😵';
           }, 0);
           break;
@@ -199,7 +199,7 @@ export function initUi(window: Window) {
 
     function rebuildGame() {
       try {
-        const { width, height, mines, openingConfig } = getBoardConfig();
+        const {width, height, mines, openingConfig} = getBoardConfig();
         board.reset(new DelayedMineField(width, height, mines, openingConfig));
       } catch (e) {
         logError(e);
@@ -213,7 +213,7 @@ export function initUi(window: Window) {
         // changes in color palette don't affect the game
         return;
       }
-      const { width, height, mines } = getBoardConfig();
+      const {width, height, mines} = getBoardConfig();
       if (
         board.getView().width !== width ||
         board.getView().height !== height ||
@@ -279,7 +279,7 @@ function createBoard(
 ): string {
   // reset container
   uiContainer.innerHTML = '';
-  const { width: w, height: h } = board.getView();
+  const {width: w, height: h} = board.getView();
 
   const elements: string[] = [];
   const cellListener = getCellListener(board);
@@ -433,7 +433,7 @@ function getPosition(cell: unknown): Position | null {
     const xVal = cell.getAttribute('x');
     const yVal = cell.getAttribute('y');
     if (xVal && yVal && /^[0-9]+$/.test(xVal) && /^[0-9]+$/.test(yVal)) {
-      return { x: parseInt(xVal), y: parseInt(yVal) };
+      return {x: parseInt(xVal), y: parseInt(yVal)};
     } else {
       // try parent
       return getPosition(cell.parentElement);
@@ -508,7 +508,7 @@ function getBoardConfig() {
       openingConfig = OpeningRestrictions.ANY;
     }
   }
-  return { width, height, mines, openingConfig };
+  return {width, height, mines, openingConfig};
 }
 
 function logError(e: unknown) {

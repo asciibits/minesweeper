@@ -1,6 +1,6 @@
-import { BitSet } from '../util/io.js';
-import { error, info, trace } from '../util/logging.js';
-import { assert } from '../util/assert.js';
+import {BitSet} from '../util/io.js';
+import {error, info, trace} from '../util/logging.js';
+import {assert} from '../util/assert.js';
 import {
   BoardEventType,
   Cell,
@@ -75,7 +75,7 @@ export class BoardIdWorker {
       !inlinedWorkerCode.endsWith('>>')
     ) {
       // dist mode - use the inlined worker code directly
-      const blob = new Blob([inlinedWorkerCode], { type: 'text/javascript' });
+      const blob = new Blob([inlinedWorkerCode], {type: 'text/javascript'});
       url = URL.createObjectURL(blob);
     } else {
       // deveoper mode - pull in the library directly
@@ -87,7 +87,8 @@ export class BoardIdWorker {
     });
     this.worker.onerror = (e: ErrorEvent) => {
       error(
-        '[BoardIdWorker.worker.onerror] Got error. Message: %o\nError: %o\nfilename: %o\nlineno: %o\nevent: %o',
+        '[BoardIdWorker.worker.onerror] Got error. Message: %o\nError: %o\n' +
+          'filename: % o\nlineno: % o\nevent: % o',
         e.message,
         e.error,
         e.filename,
@@ -110,12 +111,12 @@ export class BoardIdWorker {
       const messageResponse = e.data as Partial<MessageResponse>;
       switch (messageResponse.messageType) {
         case 'DECODE':
-          const { boardInfo } = messageResponse;
+          const {boardInfo} = messageResponse;
           assertBoardInfo(boardInfo);
           this.decodeListeners.forEach(l => l.handleDecodeResponse(boardInfo));
           break;
         case 'ENCODE':
-          const { boardId } = messageResponse;
+          const {boardId} = messageResponse;
           assert(
             typeof boardId === 'string',
             'Invalid board id: ' + JSON.stringify(boardId),
@@ -201,40 +202,40 @@ export class BoardIdWorker {
         // changing
         const needsReset = !mineFieldsEqual(mineField, board.getView());
         if (needsReset) {
-          board.reset(mineField, { DECODING: true });
+          board.reset(mineField, {DECODING: true});
         }
         const openMines = new Set<Cell>();
         for (let i = 0; i < boardInfo.cellData.length; i++) {
           const cell = board.getCell(i);
-          cell.setWrong(false, { DECODING: true });
+          cell.setWrong(false, {DECODING: true});
           switch (boardInfo.cellData[i].openState) {
             case OpenState.OPENED:
               if (cell.isMine()) {
                 openMines.add(cell);
               } else {
-                cell.openNoExpand({ DECODING: true });
+                cell.openNoExpand({DECODING: true});
               }
               break;
             case OpenState.FLAGGED:
-              cell.close({ DECODING: true });
-              cell.flag(true, { DECODING: true });
+              cell.close({DECODING: true});
+              cell.flag(true, {DECODING: true});
               break;
             default:
-              cell.close({ DECODING: true });
-              cell.flag(false, { DECODING: true });
+              cell.close({DECODING: true});
+              cell.flag(false, {DECODING: true});
               break;
           }
         }
         // open mines after the rest of the board is build (allows the UI to
         // have everything else properly rendered before showing the bomb
         // status)
-        board.openGroup(openMines, { DECODING: true });
+        board.openGroup(openMines, {DECODING: true});
         if (needsReset) {
-          board.setTimeElapsed(boardInfo.elapsedTime, { DECODING: true });
+          board.setTimeElapsed(boardInfo.elapsedTime, {DECODING: true});
         }
         // force a TIME event for completed game
         if (board.isComplete() || board.isExploded()) {
-          board.fireEvent(BoardEventType.TIME_ELAPSED, { DECODING: true });
+          board.fireEvent(BoardEventType.TIME_ELAPSED, {DECODING: true});
         }
       },
     };
@@ -261,7 +262,7 @@ export class BoardIdWorker {
 }
 
 function getMineField(boardInfo: KnownBoardInfo) {
-  const { width, height, cellData } = boardInfo;
+  const {width, height, cellData} = boardInfo;
   return MineField.createMineFieldWithMineMap(
     width,
     height,
@@ -272,7 +273,7 @@ function getMineField(boardInfo: KnownBoardInfo) {
 function getBoardInfo(board: MineBoard): KnownBoardInfo {
   const elapsedTime = board.getTimeElapsed();
   const view = board.getView();
-  const { width, height } = view;
+  const {width, height} = view;
   const cellData = board.getAllCells().map(c => ({
     isMine:
       view.getCellValue(c.position.x, c.position.y) === CellVisibleState.MINE,
@@ -283,7 +284,7 @@ function getBoardInfo(board: MineBoard): KnownBoardInfo {
         : OpenState.CLOSED,
   }));
 
-  return { width, height, elapsedTime, cellData };
+  return {width, height, elapsedTime, cellData};
 }
 
 /** This is populated when creating the 'dist' */

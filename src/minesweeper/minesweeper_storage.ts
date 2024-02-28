@@ -1,8 +1,8 @@
-import { constructHuffmanCode } from '../util/compression/huffman.js';
-import { BitSet, BitSetWriter } from '../util/io.js';
-import { DeltaCoder } from '../util/storage.js';
-import { assert } from '../util/assert.js';
-import { CellVisibleState, MineBoard, MineField } from './minesweeper.js';
+import {constructHuffmanCode} from '../util/compression/huffman.js';
+import {BitSet, BitSetWriter} from '../util/io.js';
+import {DeltaCoder} from '../util/storage.js';
+import {assert} from '../util/assert.js';
+import {CellVisibleState, MineBoard, MineField} from './minesweeper.js';
 import {
   ArithmeticDecoder,
   ArithmeticEncoder,
@@ -11,7 +11,7 @@ import {
   CountCoder,
   NumberCoder,
 } from '../util/compression/arithmetic.js';
-import { trace } from '../util/logging.js';
+import {trace} from '../util/logging.js';
 
 /**
  * The state of a "known" board (i.e. a board where all the mine locations are
@@ -57,7 +57,7 @@ class DimensionCoder implements ArithmeticValueCoder<Dimension> {
   private static readonly timeElapsedCoder = new BitExtendedCoder(7);
 
   encodeValue(value: Dimension, encoder: ArithmeticEncoder): void {
-    const { height, width, elapsedTime } = value;
+    const {height, width, elapsedTime} = value;
     if (height === 16 && width === 30) {
       // 0b11 -> Expert
       encoder.encodeBit(0.5, 1);
@@ -127,7 +127,7 @@ class DimensionCoder implements ArithmeticValueCoder<Dimension> {
       elapsedTime = DimensionCoder.timeElapsedCoder.decodeValue(decoder) * 500;
     }
 
-    return { width, height, elapsedTime };
+    return {width, height, elapsedTime};
   }
 }
 
@@ -338,7 +338,7 @@ class OpenStateCoder implements ArithmeticValueCoder<OpenState[]> {
           this.mineField.getCellValue(x, y) === CellVisibleState.MINE;
         const isInOpenGroup = board.getCell(x, y).isOpened();
 
-        const { pOpen, pFlag } = pOpenState(
+        const {pOpen, pFlag} = pOpenState(
           [left, up].filter((n): n is KnownCell => !!n),
           isMine,
           isInOpenGroup,
@@ -402,7 +402,7 @@ class OpenStateCoder implements ArithmeticValueCoder<OpenState[]> {
           this.mineField.getCellValue(x, y) === CellVisibleState.MINE;
         const isInOpenGroup = board.getCell(x, y).isOpened();
 
-        const { pOpen, pFlag } = pOpenState(
+        const {pOpen, pFlag} = pOpenState(
           [left, up].filter((n): n is KnownCell => !!n),
           isMine,
           isInOpenGroup,
@@ -451,8 +451,8 @@ export class MineBoardCoder implements ArithmeticValueCoder<KnownBoardInfo> {
   private static readonly dimensionCoder = new DimensionCoder();
 
   encodeValue(board: KnownBoardInfo, encoder: ArithmeticEncoder): void {
-    const { width, height } = board;
-    const { minemap, openState } = splitKnownCells(board.cellData);
+    const {width, height} = board;
+    const {minemap, openState} = splitKnownCells(board.cellData);
     const mineField = MineField.createMineFieldWithMineMap(
       width,
       height,
@@ -467,7 +467,7 @@ export class MineBoardCoder implements ArithmeticValueCoder<KnownBoardInfo> {
   }
 
   decodeValue(decoder: ArithmeticDecoder): KnownBoardInfo {
-    const { width, height, elapsedTime } =
+    const {width, height, elapsedTime} =
       MineBoardCoder.dimensionCoder.decodeValue(decoder);
     const minemap = new MineMapCoder(width, height).decodeValue(decoder);
     const mineField = MineField.createMineFieldWithMineMap(
@@ -498,14 +498,14 @@ function splitKnownCells(cells: KnownCell[]): {
     writer.write(cell.isMine ? 1 : 0);
     openState.push(cell.openState ?? OpenState.CLOSED);
   }
-  return { minemap: writer.bitset, openState };
+  return {minemap: writer.bitset, openState};
 }
 
 function joinKnownCells(minemap: BitSet, openState: OpenState[]): KnownCell[] {
   const cells: KnownCell[] = [];
 
   for (let i = 0; i < openState.length; i++) {
-    cells.push({ isMine: !!minemap.getBit(i), openState: openState[i] });
+    cells.push({isMine: !!minemap.getBit(i), openState: openState[i]});
   }
   return cells;
 }
@@ -653,7 +653,7 @@ function pOpenState(
   isInOpenGroup: boolean,
   tally: MineTally,
   flagRatio: number,
-): { pOpen: number; pFlag: number } {
+): {pOpen: number; pFlag: number} {
   trace('[pOpenState] %o', {
     neighbors,
     isMine,
@@ -675,7 +675,7 @@ function pOpenState(
 
   if (pOpen === 1 || pFlag === 1 || (pOpen === 0 && pFlag === 0)) {
     // got a guaranteed cell
-    return { pOpen, pFlag };
+    return {pOpen, pFlag};
   } else if (isInOpenGroup) {
     // part of an "open group", so probably open.
     return {
@@ -741,7 +741,7 @@ function pOpenState(
         pFlag = Math.min(pFlag, (1 - pOpen) / 2);
       }
     }
-    return { pOpen, pFlag };
+    return {pOpen, pFlag};
   }
 }
 
@@ -788,36 +788,36 @@ export interface VisibleBoardInfo {
  */
 export const minefieldHuffmanCode = constructHuffmanCode([
   [
-    { value: 0b000, bitCount: 3 },
-    { value: 0b0, bitCount: 1 },
+    {value: 0b000, bitCount: 3},
+    {value: 0b0, bitCount: 1},
   ],
   [
-    { value: 0b100, bitCount: 3 },
-    { value: 0b001, bitCount: 3 },
+    {value: 0b100, bitCount: 3},
+    {value: 0b001, bitCount: 3},
   ],
   [
-    { value: 0b010, bitCount: 3 },
-    { value: 0b101, bitCount: 3 },
+    {value: 0b010, bitCount: 3},
+    {value: 0b101, bitCount: 3},
   ],
   [
-    { value: 0b110, bitCount: 3 },
-    { value: 0b00111, bitCount: 5 },
+    {value: 0b110, bitCount: 3},
+    {value: 0b00111, bitCount: 5},
   ],
   [
-    { value: 0b001, bitCount: 3 },
-    { value: 0b011, bitCount: 3 },
+    {value: 0b001, bitCount: 3},
+    {value: 0b011, bitCount: 3},
   ],
   [
-    { value: 0b101, bitCount: 3 },
-    { value: 0b10111, bitCount: 5 },
+    {value: 0b101, bitCount: 3},
+    {value: 0b10111, bitCount: 5},
   ],
   [
-    { value: 0b011, bitCount: 3 },
-    { value: 0b01111, bitCount: 5 },
+    {value: 0b011, bitCount: 3},
+    {value: 0b01111, bitCount: 5},
   ],
   [
-    { value: 0b111, bitCount: 3 },
-    { value: 0b11111, bitCount: 5 },
+    {value: 0b111, bitCount: 3},
+    {value: 0b11111, bitCount: 5},
   ],
 ]);
 
@@ -857,7 +857,8 @@ export enum FlagMode {
 //   probabilityOfZero(): number {
 //     const upOpen = this.getUpOpen();
 //     const leftOpen = this.getLeftOpen();
-//     const isMine = this.minemap?.[this.y * this.width + this.currentRow.length];
+//     const isMine = this.minemap?.[this.y * this.width +
+// this.currentRow.length];
 
 //     if (this.flagMode === FlagMode.NO_FLAG && isMine) {
 //       // in NO_FLAG, all mines, regardless of neighbors, are left closed at a

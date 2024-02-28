@@ -1,5 +1,5 @@
-import { assert } from './assert.js';
-import { IterType, asIterator, countBits } from './utils.js';
+import {assert} from './assert.js';
+import {IterType, asIterator, countBits} from './utils.js';
 
 export type Bit = 0 | 1;
 
@@ -265,7 +265,7 @@ export class BitSet implements Iterable<Bit> {
   getBit(index: number): Bit {
     assert(index >= 0, 'Index out of range');
     if (index >= this._length) return 0;
-    const { bytePos, bitPos } = getPosition(index);
+    const {bytePos, bitPos} = getPosition(index);
     return ((this.bits[bytePos] >>> bitPos) & 1) as Bit;
   }
 
@@ -275,7 +275,7 @@ export class BitSet implements Iterable<Bit> {
       // use 'length' not '_length' to get the side effects
       this.length = index + 1;
     }
-    const { bytePos, bitPos } = getPosition(index);
+    const {bytePos, bitPos} = getPosition(index);
     const mask = 1 << bitPos;
     if (val) {
       this.bits[bytePos] |= mask;
@@ -306,7 +306,7 @@ export class BitSet implements Iterable<Bit> {
     if (bitCount === 0) {
       return 0;
     }
-    const { bytePos, bitPos } = getPosition(start);
+    const {bytePos, bitPos} = getPosition(start);
     if (bitPos === 0 && bitCount === 32) {
       // performance short circuit
       return this.bits[bytePos];
@@ -341,7 +341,7 @@ export class BitSet implements Iterable<Bit> {
       // nothing to do
       return;
     }
-    const { bytePos, bitPos } = getPosition(start);
+    const {bytePos, bitPos} = getPosition(start);
 
     if (bitPos + bitCount <= 32) {
       const mask = (0xffffffff >>> -bitCount) << bitPos;
@@ -383,7 +383,7 @@ export class BitSet implements Iterable<Bit> {
     if (bitCount === 0) {
       return 0n;
     }
-    const { bytePos, bitPos } = getPosition(start);
+    const {bytePos, bitPos} = getPosition(start);
     if (bitPos + bitCount <= 32) {
       // short circuit for single buffer
       return BigInt(
@@ -437,7 +437,7 @@ export class BitSet implements Iterable<Bit> {
       this.length = Math.max(this._length, end);
     }
 
-    let { bytePos, bitPos } = getPosition(start);
+    let {bytePos, bitPos} = getPosition(start);
     // shift val to line up with bitPos
     val <<= BigInt(bitPos);
     const neg = val < 0;
@@ -822,7 +822,7 @@ export class BitSetWriter implements BitWriter {
   }
 }
 
-export type Bits = { value: number | bigint; bitCount: number };
+export type Bits = {value: number | bigint; bitCount: number};
 
 /**
  * Creates a Reader from a `Bits` generator
@@ -852,7 +852,7 @@ export class BitSourceReader extends AbstractBitReader {
   ): BitSourceReader {
     source = typeof source === 'number' ? [source] : source;
     return new BitSourceReader(
-      source.map(s => ({ value: s, bitCount: bitsPerInput })),
+      source.map(s => ({value: s, bitCount: bitsPerInput})),
       bitsPerInput * source.length,
     );
   }

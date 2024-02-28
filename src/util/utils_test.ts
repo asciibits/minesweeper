@@ -1,4 +1,4 @@
-import { countBits, reverseBits } from './utils.js';
+import {countBits, reverseBits} from './utils.js';
 
 describe('reverseBits', () => {
   it('reverses bits', () => {

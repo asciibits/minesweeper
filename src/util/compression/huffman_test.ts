@@ -1,5 +1,5 @@
-import { BitSet, BitSetWriter } from '../io.js';
-import { testRandom } from '../random.js';
+import {BitSet, BitSetWriter} from '../io.js';
+import {testRandom} from '../random.js';
 import {
   HuffmanCode,
   SymbolPair,
@@ -12,56 +12,56 @@ import {
 describe('Huffman', () => {
   const identityMapping: SymbolPair[] = [
     [
-      { value: 0, bitCount: 1 },
-      { value: 0, bitCount: 1 },
+      {value: 0, bitCount: 1},
+      {value: 0, bitCount: 1},
     ],
     [
-      { value: 1, bitCount: 1 },
-      { value: 1, bitCount: 1 },
+      {value: 1, bitCount: 1},
+      {value: 1, bitCount: 1},
     ],
   ];
   const xorMapping: SymbolPair[] = [
     [
-      { value: 0, bitCount: 1 },
-      { value: 1, bitCount: 1 },
+      {value: 0, bitCount: 1},
+      {value: 1, bitCount: 1},
     ],
     [
-      { value: 1, bitCount: 1 },
-      { value: 0, bitCount: 1 },
+      {value: 1, bitCount: 1},
+      {value: 0, bitCount: 1},
     ],
   ];
   // Maps the codes: [0, 01, 11] to [1, 10, 00]
   const simpleMapping: SymbolPair[] = [
     [
-      { value: 0b0, bitCount: 1 },
-      { value: 0b1, bitCount: 1 },
+      {value: 0b0, bitCount: 1},
+      {value: 0b1, bitCount: 1},
     ],
     [
-      { value: 0b01, bitCount: 2 },
-      { value: 0b10, bitCount: 2 },
+      {value: 0b01, bitCount: 2},
+      {value: 0b10, bitCount: 2},
     ],
     [
-      { value: 0b11, bitCount: 2 },
-      { value: 0b00, bitCount: 2 },
+      {value: 0b11, bitCount: 2},
+      {value: 0b00, bitCount: 2},
     ],
   ];
   // Maps the codes: [00, 10, 01, 11] to [0, 01, 011, 111]
   const fourMapping: SymbolPair[] = [
     [
-      { value: 0b00, bitCount: 2 },
-      { value: 0b0, bitCount: 1 },
+      {value: 0b00, bitCount: 2},
+      {value: 0b0, bitCount: 1},
     ],
     [
-      { value: 0b10, bitCount: 2 },
-      { value: 0b01, bitCount: 2 },
+      {value: 0b10, bitCount: 2},
+      {value: 0b01, bitCount: 2},
     ],
     [
-      { value: 0b01, bitCount: 2 },
-      { value: 0b011, bitCount: 3 },
+      {value: 0b01, bitCount: 2},
+      {value: 0b011, bitCount: 3},
     ],
     [
-      { value: 0b11, bitCount: 2 },
-      { value: 0b111, bitCount: 3 },
+      {value: 0b11, bitCount: 2},
+      {value: 0b111, bitCount: 3},
     ],
   ];
   describe('constructHuffmanCode', () => {
@@ -70,12 +70,12 @@ describe('Huffman', () => {
       const code = constructHuffmanCode(identityMapping);
       expect(code).toEqual({
         encode: [
-          { value: 0, bitCount: 1 },
-          { value: 1, bitCount: 1 },
+          {value: 0, bitCount: 1},
+          {value: 1, bitCount: 1},
         ],
         decode: [
-          { value: 0, bitCount: 1 },
-          { value: 1, bitCount: 1 },
+          {value: 0, bitCount: 1},
+          {value: 1, bitCount: 1},
         ],
       } as HuffmanCode);
     });
@@ -84,12 +84,12 @@ describe('Huffman', () => {
       const code = constructHuffmanCode(xorMapping);
       expect(code).toEqual({
         encode: [
-          { value: 1, bitCount: 1 },
-          { value: 0, bitCount: 1 },
+          {value: 1, bitCount: 1},
+          {value: 0, bitCount: 1},
         ],
         decode: [
-          { value: 1, bitCount: 1 },
-          { value: 0, bitCount: 1 },
+          {value: 1, bitCount: 1},
+          {value: 0, bitCount: 1},
         ],
       } as HuffmanCode);
     });
@@ -98,18 +98,18 @@ describe('Huffman', () => {
       const code = constructHuffmanCode(simpleMapping);
       expect(code).toEqual({
         encode: [
-          { value: 0b1, bitCount: 1 },
+          {value: 0b1, bitCount: 1},
           [
-            { value: 0b10, bitCount: 2 },
-            { value: 0b00, bitCount: 2 },
+            {value: 0b10, bitCount: 2},
+            {value: 0b00, bitCount: 2},
           ],
         ],
         decode: [
           [
-            { value: 0b11, bitCount: 2 },
-            { value: 0b01, bitCount: 2 },
+            {value: 0b11, bitCount: 2},
+            {value: 0b01, bitCount: 2},
           ],
-          { value: 0b0, bitCount: 1 },
+          {value: 0b0, bitCount: 1},
         ],
       } as HuffmanCode);
     });
@@ -119,21 +119,21 @@ describe('Huffman', () => {
       expect(code).toEqual({
         encode: [
           [
-            { value: 0b0, bitCount: 1 },
-            { value: 0b01, bitCount: 2 },
+            {value: 0b0, bitCount: 1},
+            {value: 0b01, bitCount: 2},
           ],
           [
-            { value: 0b011, bitCount: 3 },
-            { value: 0b111, bitCount: 3 },
+            {value: 0b011, bitCount: 3},
+            {value: 0b111, bitCount: 3},
           ],
         ],
         decode: [
-          { value: 0b00, bitCount: 2 },
+          {value: 0b00, bitCount: 2},
           [
-            { value: 0b10, bitCount: 2 },
+            {value: 0b10, bitCount: 2},
             [
-              { value: 0b01, bitCount: 2 },
-              { value: 0b11, bitCount: 2 },
+              {value: 0b01, bitCount: 2},
+              {value: 0b11, bitCount: 2},
             ],
           ],
         ],
@@ -172,75 +172,75 @@ describe('Huffman', () => {
   describe('generateHuffmanCode', () => {
     it('generates equal weight two value code', () => {
       const code = generateHuffmanCode([
-        { value: 0b0, bitCount: 1, weight: 1 },
-        { value: 0b1, bitCount: 1, weight: 1 },
+        {value: 0b0, bitCount: 1, weight: 1},
+        {value: 0b1, bitCount: 1, weight: 1},
       ]);
       expect(code).toEqual({
         encode: [
-          { value: 0, bitCount: 1 },
-          { value: 1, bitCount: 1 },
+          {value: 0, bitCount: 1},
+          {value: 1, bitCount: 1},
         ],
         decode: [
-          { value: 0, bitCount: 1 },
-          { value: 1, bitCount: 1 },
+          {value: 0, bitCount: 1},
+          {value: 1, bitCount: 1},
         ],
       } as HuffmanCode);
     });
     it('generates equal weight, four value code', () => {
       const code = generateHuffmanCode([
-        { value: 0b00, bitCount: 2, weight: 1 },
-        { value: 0b10, bitCount: 2, weight: 1 },
-        { value: 0b01, bitCount: 2, weight: 1 },
-        { value: 0b11, bitCount: 2, weight: 1 },
+        {value: 0b00, bitCount: 2, weight: 1},
+        {value: 0b10, bitCount: 2, weight: 1},
+        {value: 0b01, bitCount: 2, weight: 1},
+        {value: 0b11, bitCount: 2, weight: 1},
       ]);
       expect(code).toEqual({
         encode: [
           [
-            { value: 0b00, bitCount: 2 },
-            { value: 0b10, bitCount: 2 },
+            {value: 0b00, bitCount: 2},
+            {value: 0b10, bitCount: 2},
           ],
           [
-            { value: 0b01, bitCount: 2 },
-            { value: 0b11, bitCount: 2 },
+            {value: 0b01, bitCount: 2},
+            {value: 0b11, bitCount: 2},
           ],
         ],
         decode: [
           [
-            { value: 0b00, bitCount: 2 },
-            { value: 0b10, bitCount: 2 },
+            {value: 0b00, bitCount: 2},
+            {value: 0b10, bitCount: 2},
           ],
           [
-            { value: 0b01, bitCount: 2 },
-            { value: 0b11, bitCount: 2 },
+            {value: 0b01, bitCount: 2},
+            {value: 0b11, bitCount: 2},
           ],
         ],
       } as HuffmanCode);
     });
     it('generates off weight, four value code', () => {
       const code = generateHuffmanCode([
-        { value: 0b00, bitCount: 2, weight: 1 },
-        { value: 0b10, bitCount: 2, weight: 100 },
-        { value: 0b01, bitCount: 2, weight: 1000 },
-        { value: 0b11, bitCount: 2, weight: 10 },
+        {value: 0b00, bitCount: 2, weight: 1},
+        {value: 0b10, bitCount: 2, weight: 100},
+        {value: 0b01, bitCount: 2, weight: 1000},
+        {value: 0b11, bitCount: 2, weight: 10},
       ]);
       expect(code).toEqual({
         encode: [
           [
-            { value: 0b011, bitCount: 3 },
-            { value: 0b01, bitCount: 2 },
+            {value: 0b011, bitCount: 3},
+            {value: 0b01, bitCount: 2},
           ],
           [
-            { value: 0b0, bitCount: 1 },
-            { value: 0b111, bitCount: 3 },
+            {value: 0b0, bitCount: 1},
+            {value: 0b111, bitCount: 3},
           ],
         ],
         decode: [
-          { value: 0b01, bitCount: 2 },
+          {value: 0b01, bitCount: 2},
           [
-            { value: 0b10, bitCount: 2 },
+            {value: 0b10, bitCount: 2},
             [
-              { value: 0b00, bitCount: 2 },
-              { value: 0b11, bitCount: 2 },
+              {value: 0b00, bitCount: 2},
+              {value: 0b11, bitCount: 2},
             ],
           ],
         ],

@@ -1,4 +1,4 @@
-import { assert } from './assert.js';
+import {assert} from './assert.js';
 
 /** Calculate nCk - ie n!/(k!*(n-k)!) */
 export function combinations(n: number, k: number): bigint {

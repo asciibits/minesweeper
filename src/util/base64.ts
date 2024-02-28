@@ -1,4 +1,4 @@
-import { BitReader, BitWriter } from './io.js';
+import {BitReader, BitWriter} from './io.js';
 
 // URL safe variant
 export const base64Digits =

@@ -6,8 +6,8 @@ import {
   BitWriter,
   biterator,
 } from '../io.js';
-import { trace } from '../logging.js';
-import { assert } from '../assert.js';
+import {trace} from '../logging.js';
+import {assert} from '../assert.js';
 
 /**
  * A pair of factory methods for creating ArithmeticEncoder and
@@ -175,7 +175,7 @@ export function encodeToWriter(
   input: BitReader,
   coder: ArithmeticCoder,
   writer: BitWriter,
-  options?: { terminateStream?: boolean; count?: number },
+  options?: {terminateStream?: boolean; count?: number},
 ): void {
   const terminateStream = options?.terminateStream ?? true;
   const count = options?.count ?? 1;
@@ -215,7 +215,7 @@ export function encodeToBitSet(
     count = count ?? 1;
   }
 
-  encodeToWriter(input, coder, writer, { terminateStream, count });
+  encodeToWriter(input, coder, writer, {terminateStream, count});
   return writer.bitset;
 }
 
@@ -255,7 +255,7 @@ export function decodeToWriter(
   encoded: BitReader,
   coder: ArithmeticCoder,
   writer: BitWriter,
-  options?: { count?: number; padStream?: boolean },
+  options?: {count?: number; padStream?: boolean},
 ): void {
   const count = options?.count ?? 1;
   const padStream = options?.padStream ?? false;
@@ -294,7 +294,7 @@ export function decodeToBitSet(
     writer = outputOrCount ?? new BitSetWriter();
     count = count ?? 1;
   }
-  decodeToWriter(encoded, coder, writer, { count, padStream });
+  decodeToWriter(encoded, coder, writer, {count, padStream});
   return writer.bitset;
 }
 
@@ -433,17 +433,17 @@ export class NumberCoder implements ArithmeticValueCoder<number> {
       //     val = 0b1001;
       // First bit:
       //       b = 0b1000
-      //numZeros = 0b1000
+      // numZeros = 0b1000
       // numOnes = 0b0010 + 0b0001
       //       p = numZeros / (numZeros + numOnes)
       // Second bit:
       //       b = 0b0100
-      //numZeros = 0b0100
+      // numZeros = 0b0100
       // numOnes = 0
       //       p = 1
       // Third bit:
       //       b = 0b0010
-      //numZeros = 0b0010
+      // numZeros = 0b0010
       // numOnes = 0b0000 + 0b0001
       //       p = numZeros / (numZeros + numOnes)
       //
@@ -1071,7 +1071,7 @@ function generateModelTree(symbols: ArithmeticSymbol[]): Node {
       normalizeTree(node.children[0]),
       normalizeTree(node.children[1]),
     ];
-    return { p, children };
+    return {p, children};
   }
 
   const root: NodeBuilder = {

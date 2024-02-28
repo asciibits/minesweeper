@@ -1,4 +1,4 @@
-import { initUi } from './ui.js';
+import {initUi} from './ui.js';
 
 /** @fileoverview The master export file */
 const win: Window | undefined =

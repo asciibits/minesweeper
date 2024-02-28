@@ -1,7 +1,7 @@
-import { decodeBase64, encodeBase64 } from './base64.js';
-import { BitSet, BitSetWriter, BitSourceReader, BitReader } from './io.js';
-import { random } from './random.js';
-import { bitset } from './test_utils.js';
+import {decodeBase64, encodeBase64} from './base64.js';
+import {BitSet, BitSetWriter, BitSourceReader, BitReader} from './io.js';
+import {random} from './random.js';
+import {bitset} from './test_utils.js';
 
 describe('Base64 Encoding', () => {
   function encode(source: BitReader, padEnd?: boolean): string;

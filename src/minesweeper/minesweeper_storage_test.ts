@@ -2,9 +2,9 @@ import {
   decodeValue,
   encodeValueToBitSet,
 } from '../util/compression/arithmetic.js';
-import { BitSet } from '../util/io.js';
-import { testRandom } from '../util/random.js';
-import { Cell, CellVisibleState, MineBoard, MineField } from './minesweeper.js';
+import {BitSet} from '../util/io.js';
+import {testRandom} from '../util/random.js';
+import {Cell, CellVisibleState, MineBoard, MineField} from './minesweeper.js';
 import {
   KnownBoardInfo,
   KnownCell,
@@ -75,12 +75,12 @@ describe('Minesweeper Storage', () => {
         const height = testRandom.getRandomInteger(150, 1);
         const cellCount = width * height;
         const numberOfOpenings = testRandom.getRandomInteger(6, 1);
-        const openings = Array.from({ length: numberOfOpenings }).map(() => ({
+        const openings = Array.from({length: numberOfOpenings}).map(() => ({
           x: testRandom.getRandomInteger(width),
           y: testRandom.getRandomInteger(height),
         }));
         const reserved = new Set<number>();
-        for (const { x, y } of openings) {
+        for (const {x, y} of openings) {
           for (let dx = Math.max(x - 1, 0); dx < Math.min(x + 2, width); dx++) {
             for (
               let dy = Math.max(y - 1, 0);
@@ -103,7 +103,7 @@ describe('Minesweeper Storage', () => {
         );
         const board = new MineBoard(mineField);
         const unprocessed = new Set<Cell>();
-        for (const { x, y } of openings) {
+        for (const {x, y} of openings) {
           const cell = board.getCell(x, y);
           cell.open();
           unprocessed.add(cell);
@@ -195,10 +195,8 @@ describe('Minesweeper Storage', () => {
     //   const width = 10;
     //   const height = 10;
     //   const cellCount = width * height;
-    //   const mineMap =
-    //     0b1011100000010110000011011100110110000101110100001100100001101111001011011011001110011010100100011100n;
-    //   const openMap =
-    //     0b0100101101011100000110000110000010001101010110011110111100001101101101100111100001011010101010010111n;
+    //   const mineMap = 0n;
+    //   const openMap = 0n
     //   const cellData: KnownCell[] = [];
     //   for (let i = 0; i < cellCount; i++) {
     //     const isMine = !!(mineMap & (1n << BigInt(i)));

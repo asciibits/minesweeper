@@ -1,6 +1,6 @@
-import { assert } from '../assert.js';
-import { BitSet, BitSetWriter, BitReader, BitWriter } from '../io.js';
-import { reverseBits } from '../utils.js';
+import {assert} from '../assert.js';
+import {BitSet, BitSetWriter, BitReader, BitWriter} from '../io.js';
+import {reverseBits} from '../utils.js';
 
 export interface HuffmanSymbol {
   value: number;
@@ -62,7 +62,7 @@ export function encodeHuffman(
   const bitset = output ? undefined : new BitSet();
   output = output ?? new BitSetWriter(bitset!);
   for (const code of new HuffmanEncoder(model, input)) {
-    const { value, bitCount } = code;
+    const {value, bitCount} = code;
     output.writeBatch(value, bitCount);
   }
   return bitset;
@@ -115,8 +115,8 @@ export function generateHuffmanCode(
     } else {
       // use value 0 for now - it will be updated with a canonical value after
       mappings.push([
-        { value: node.value, bitCount: node.bitCount },
-        { value: 0, bitCount: depth },
+        {value: node.value, bitCount: node.bitCount},
+        {value: 0, bitCount: depth},
       ]);
     }
   }
@@ -162,7 +162,7 @@ type PartialHuffmanModel = [
 export function constructHuffmanCode(mappings: SymbolPair[]): HuffmanCode {
   const encode = constructHuffmanModel(mappings);
   const decode = constructHuffmanModel(mappings.map(p => [p[1], p[0]]));
-  return { encode, decode };
+  return {encode, decode};
 }
 
 function constructHuffmanModel(mappings: SymbolPair[]): HuffmanModel {
@@ -177,7 +177,10 @@ function constructHuffmanModel(mappings: SymbolPair[]): HuffmanModel {
         model[idx] = next = [undefined, undefined];
       } else if (!Array.isArray(next)) {
         throw new Error(
-          `Found conflicting encode values. 0b${symbolToString({ value: input.value & ((1 << i) - 1), bitCount: i })} is a prefix for 0b${symbolToString(input)}.`,
+          `Found conflicting encode values. 0b${symbolToString({
+            value: input.value & ((1 << i) - 1),
+            bitCount: i,
+          })} is a prefix for 0b${symbolToString(input)}.`,
         );
       }
       model = next;
@@ -185,7 +188,9 @@ function constructHuffmanModel(mappings: SymbolPair[]): HuffmanModel {
     const idx = (input.value >>> (input.bitCount - 1)) & 1;
     if (model[idx]) {
       throw new Error(
-        `Found conflicting encode values. 0b${symbolToString(input)} is a prefix for another value.`,
+        `Found conflicting encode values. 0b${symbolToString(
+          input,
+        )} is a prefix for another value.`,
       );
     }
     model[idx] = code;

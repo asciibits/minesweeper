@@ -1,6 +1,6 @@
 /** This calculates a standard Huffman prefix code for a given input */
 
-import { assert } from './assert.js';
+import {assert} from './assert.js';
 import {
   BitSet,
   BitSetWriter,
@@ -10,7 +10,7 @@ import {
   Reader,
   Bit,
 } from './io.js';
-import { trace } from './logging.js';
+import {trace} from './logging.js';
 
 /** An encoder/decoder */
 export interface Coder<
@@ -315,7 +315,7 @@ export function encodeGrid(
     outputBitSet.setBit(outputPos++);
 
     if (splits.length === 1) {
-      const { x, y, w, h } = splits[0];
+      const {x, y, w, h} = splits[0];
       let v = 0;
       for (let dy = y; dy < y + h; dy++) {
         for (let dx = x; dx < x + w; dx++) {
@@ -324,7 +324,7 @@ export function encodeGrid(
           outputBitSet.setBit(outputPos++, b);
         }
       }
-      trace('Working on small grid: %o', { x, y, w, h, v });
+      trace('Working on small grid: %o', {x, y, w, h, v});
       if (v === 0) {
         outputPos = pos;
         outputBitSet.setBits(0b00, outputPos, (outputPos += 2));
@@ -373,7 +373,7 @@ export function encodeGrid(
     h: number;
   }
   function split(rect: GridRect): GridRect[] {
-    const { x, y, w, h } = rect;
+    const {x, y, w, h} = rect;
 
     // first check if everything is under 4
     if (w < 4 && h < 4) {
@@ -388,7 +388,7 @@ export function encodeGrid(
         for (let i = 0; i < vSplit; i++) {
           const yStart = y + Math.trunc((i * h) / vSplit);
           const yEnd = y + Math.trunc(((i + 1) * h) / vSplit);
-          splits.push({ x, y: yStart, w, h: yEnd - yStart });
+          splits.push({x, y: yStart, w, h: yEnd - yStart});
         }
         return splits;
       }
@@ -399,7 +399,7 @@ export function encodeGrid(
         for (let i = 0; i < hSplit; i++) {
           const xStart = x + Math.trunc((i * w) / hSplit);
           const xEnd = x + Math.trunc(((i + 1) * w) / hSplit);
-          splits.push({ x: xStart, y, w: xEnd - xStart, h });
+          splits.push({x: xStart, y, w: xEnd - xStart, h});
         }
         return splits;
       }
@@ -413,32 +413,32 @@ export function encodeGrid(
         const midY = y + Math.trunc(h / 2);
         const endY = y + h;
         return [
-          { x, y, w: midX - x, h: midY - y },
-          { x: midX, y, w: endX - midX, h: midY - y },
-          { x, y: midY, w: midX - x, h: endY - midY },
-          { x: midX, y: midY, w: endX - midX, h: endY - midY },
+          {x, y, w: midX - x, h: midY - y},
+          {x: midX, y, w: endX - midX, h: midY - y},
+          {x, y: midY, w: midX - x, h: endY - midY},
+          {x: midX, y: midY, w: endX - midX, h: endY - midY},
         ];
       } else {
         const midX = x + Math.trunc(w / 2);
         const endX = x + w;
         return [
-          { x, y, w: midX - x, h },
-          { x: midX, y, w: endX - midX, h },
+          {x, y, w: midX - x, h},
+          {x: midX, y, w: endX - midX, h},
         ];
       }
     } else {
       const midY = y + Math.trunc(h / 2);
       const endY = y + h;
       return [
-        { x, y, w, h: midY - y },
-        { x, y: midY, w, h: endY - midY },
+        {x, y, w, h: midY - y},
+        {x, y: midY, w, h: endY - midY},
       ];
     }
   }
 
   const height = Math.ceil(input.length / width);
 
-  delve({ x: 0, y: 0, w: width, h: height });
+  delve({x: 0, y: 0, w: width, h: height});
 
   // trim the length of output to the current position
   output.length = outputPos;

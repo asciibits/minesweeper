@@ -1,7 +1,10 @@
-import { assert } from './assert.js';
+import {assert} from './assert.js';
 
 export interface BitSource {
-  /** Return the next set of random bits. This value must be a 32-bit unsigned integer. */
+  /**
+   * Return the next set of random bits. This value must be a 32-bit unsigned
+   * integer.
+   */
   next(): number;
 }
 
@@ -185,7 +188,7 @@ function getRandomFunction(seed: number): () => number {
  * From: https://github.com/bryc/code/blob/master/jshash/PRNGs.md
  */
 function sfc32(a: number, b: number, c: number, d: number) {
-  return function (): number {
+  return (): number => {
     a |= 0;
     b |= 0;
     c |= 0;

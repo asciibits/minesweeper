@@ -2,9 +2,9 @@ import {
   bitmapFromLexicalOrdering,
   lexicalOrdering,
 } from '../util/combinitorics.js';
-import { Random, choose } from '../util/random.js';
-import { assert } from '../util/assert.js';
-import { IterType, asIterable } from '../util/utils.js';
+import {Random, choose} from '../util/random.js';
+import {assert} from '../util/assert.js';
+import {IterType, asIterable} from '../util/utils.js';
 
 /** The value displayed in a cell. */
 export enum CellVisibleState {
@@ -107,7 +107,7 @@ export class DelayedMineField implements MineFieldView {
         this.width,
         this.height,
         this.mineCount,
-        { x, y },
+        {x, y},
         this.openingRestriction,
         this.rand,
       );
@@ -168,7 +168,7 @@ export class MineField implements MineFieldView {
     // positions. And last, for the first 'b' positions, swap it with a random
     // position after it. Those first 'b' positions become the mines.
     const mines = choose(
-      Array.from({ length: cellCount }, (_v, i) => i).filter(
+      Array.from({length: cellCount}, (_v, i) => i).filter(
         p => !reservedSet.has(p),
       ),
       mineCount,
@@ -186,12 +186,12 @@ export class MineField implements MineFieldView {
     openingRestriction = OpeningRestrictions.ANY,
     rand?: Random,
   ): MineField {
-    const { x, y } = openingPosition ?? { x: 0, y: 0 };
+    const {x, y} = openingPosition ?? {x: 0, y: 0};
     const reservedPositions: Position[] = [];
     switch (openingRestriction) {
       case OpeningRestrictions.NO_MINE:
         // just add the single cell to the "skip" set
-        reservedPositions.push({ x, y });
+        reservedPositions.push({x, y});
         break;
       case OpeningRestrictions.ZERO:
         // add the opening cell and all adjacent cells to the "skip" set
@@ -201,7 +201,7 @@ export class MineField implements MineFieldView {
             iy < Math.min(y + 2, height);
             iy++
           ) {
-            reservedPositions.push({ x: ix, y: iy });
+            reservedPositions.push({x: ix, y: iy});
           }
         }
         break;
@@ -340,9 +340,9 @@ export class MineField implements MineFieldView {
     if (!board) {
       return 'Uninitialized';
     }
-    return Array.from({ length: this.height })
+    return Array.from({length: this.height})
       .map((_v, y) =>
-        Array.from({ length: this.width })
+        Array.from({length: this.width})
           .map((_v, x) => board[x + y * this.width])
           .map(v => (v === CellVisibleState.MINE ? 'X' : String(v)))
           .join(''),
@@ -471,7 +471,7 @@ export class MineBoard {
     }
     while (toProcess.size) {
       const cell = pop();
-      const { x, y } = cell.position;
+      const {x, y} = cell.position;
       group.add(cell);
       const value = this.view.getCellValue(x, y);
       if (value === CellVisibleState.ZERO) {
@@ -603,11 +603,11 @@ export class MineBoard {
       cell.dispose(attributes);
     }
 
-    const { width: w, height: h } = view;
+    const {width: w, height: h} = view;
     this.cells.length = w * h;
     for (let x = 0; x < w; x++) {
       for (let y = 0; y < h; y++) {
-        const cell = (this.cells[x + y * w] = new Cell({ x, y }, this));
+        const cell = (this.cells[x + y * w] = new Cell({x, y}, this));
         cell.addListener(this.cellListener);
       }
     }
@@ -621,7 +621,7 @@ export class MineBoard {
 
   private initializeStats() {
     this.openMines = 0;
-    const { width: w, height: h, mineCount: m } = this.getView();
+    const {width: w, height: h, mineCount: m} = this.getView();
     this.minesRemaining = m;
     this.cellsRemaining = w * h - m;
     this.boardStarted = 0;
@@ -642,7 +642,7 @@ export class MineBoard {
   openGroup(group: IterType<Cell>, attributes?: Record<string, unknown>) {
     for (const cell of asIterable(group)) {
       if (!cell.isOpened()) {
-        cell.openNoExpand({ ...attributes, OPEN_GROUP: true });
+        cell.openNoExpand({...attributes, OPEN_GROUP: true});
       }
     }
     this.fireEvent(BoardEventType.CELLS_OPENED, attributes);
@@ -654,7 +654,7 @@ export class MineBoard {
 
   fireEvent(type: BoardEventType, attributes?: Record<string, unknown>) {
     for (const listener of this.listeners) {
-      listener(this, { type, attributes });
+      listener(this, {type, attributes});
     }
   }
 }
@@ -804,8 +804,8 @@ export class Cell {
   }
   getNeighbors(): Cell[] {
     if (!this.neighbors.length) {
-      const { x, y } = this.position;
-      const { width: w, height: h } = this.board.getView();
+      const {x, y} = this.position;
+      const {width: w, height: h} = this.board.getView();
       for (let ix = Math.max(x - 1, 0); ix < Math.min(x + 2, w); ix++) {
         for (let iy = Math.max(y - 1, 0); iy < Math.min(y + 2, h); iy++) {
           if (ix !== x || iy !== y) {
@@ -846,7 +846,7 @@ export class Cell {
 
   private fireEvent(type: CellEventType, attributes?: Record<string, unknown>) {
     for (const listener of this.listeners) {
-      listener(this, { type, attributes });
+      listener(this, {type, attributes});
     }
   }
 }

@@ -1,4 +1,4 @@
-import { BitSource, Random, choose, testRandom } from './random.js';
+import {BitSource, Random, choose, testRandom} from './random.js';
 
 describe('Random', () => {
   class TestRandomBitSource implements BitSource {

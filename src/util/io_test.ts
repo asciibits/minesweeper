@@ -7,8 +7,8 @@ import {
   concatenateReaders,
   interator,
 } from './io.js';
-import { testRandom } from './random.js';
-import { bitset } from './test_utils.js';
+import {testRandom} from './random.js';
+import {bitset} from './test_utils.js';
 
 describe('BitSet', () => {
   describe('Single Bit Operations', () => {
@@ -44,8 +44,8 @@ describe('BitSet', () => {
       bitSet.length = 101;
       expect(bitSet.getBit(100)).toBe(0);
 
-      // try again, but with the length going low enough to impact the full buffer
-      // byte
+      // try again, but with the length going low enough to impact the full
+      // buffer byte
       bitSet.setBit(100, 1);
       bitSet.length = 50;
       bitSet.length = 101;
@@ -144,7 +144,8 @@ describe('BitSet', () => {
         bitSet.setBit(99, 1);
         // grab the bits from 18 through 41 (exclusive)
         expect(bitSet.getBigBits(18, 41)).toBe(0b01000000000000000000010n);
-        // grab the bits from 37 through 61 (exclusive) - crosses one buffer bits
+        // grab the bits from 37 through 61 (exclusive) - crosses one buffer
+        // bits
         expect(bitSet.getBigBits(38, 61)).toBe(0b01000000000000000000010n);
         // allows requesting bits beyond size, and yields zeros
         expect(bitSet.getBigBits(38, 70)).toBe(0b01000000000000000000010n);
@@ -329,7 +330,7 @@ describe('BitSet', () => {
             if (testRandom.getRandomBits(1) !== 0) {
               val = ~val;
             }
-            tests.push({ val, start, end });
+            tests.push({val, start, end});
             bitSet.setBigBits(val, start, end);
             const result = bitSet.getBigBits(start, end);
             const comp = val & ((1n << BigInt(end - start)) - 1n);
@@ -708,7 +709,8 @@ describe('BitSet Reader / Writer', () => {
         expect(bitset.toReader(18).readBigBits(23)).toBe(
           0b01000000000000000000010n,
         );
-        // grab the bits from 37 through 61 (exclusive) - crosses one buffer bits
+        // grab the bits from 37 through 61 (exclusive) - crosses one buffer
+        // bits
         expect(bitset.toReader(38).readBigBits(23)).toBe(
           0b01000000000000000000010n,
         );
@@ -728,8 +730,8 @@ describe('BitSet Reader / Writer', () => {
 describe('BitSourceReader', () => {
   it('Reads single bits', () => {
     const reader = new BitSourceReader([
-      { value: 0b1001, bitCount: 4 },
-      { value: 0b0110, bitCount: 4 },
+      {value: 0b1001, bitCount: 4},
+      {value: 0b0110, bitCount: 4},
     ]);
     expect(reader.read()).toBe(1);
     expect(reader.read()).toBe(0);
@@ -743,8 +745,8 @@ describe('BitSourceReader', () => {
   });
   it('reports done after single bits', () => {
     const reader = new BitSourceReader([
-      { value: 0b1, bitCount: 1 },
-      { value: 0b0, bitCount: 1 },
+      {value: 0b1, bitCount: 1},
+      {value: 0b0, bitCount: 1},
     ]);
     expect(reader.isClosed()).toBe(false);
     reader.read();
@@ -754,8 +756,8 @@ describe('BitSourceReader', () => {
   });
   it('reads multiple bits', () => {
     const reader = new BitSourceReader([
-      { value: 0xcafe, bitCount: 16 },
-      { value: 0xbabe, bitCount: 16 },
+      {value: 0xcafe, bitCount: 16},
+      {value: 0xbabe, bitCount: 16},
     ]);
     expect(reader.readBatch(12)).toBe(0xafe);
     expect(reader.readBatch(12)).toBe(0xbec);
@@ -763,9 +765,9 @@ describe('BitSourceReader', () => {
   });
   it('reads multiple bits across int boundaries', () => {
     const reader = new BitSourceReader([
-      { value: 0xcafe, bitCount: 16 },
-      { value: 0xbabe, bitCount: 16 },
-      { value: 0xdeadbeef, bitCount: 32 },
+      {value: 0xcafe, bitCount: 16},
+      {value: 0xbabe, bitCount: 16},
+      {value: 0xdeadbeef, bitCount: 32},
     ]);
     expect(reader.readBatch(16)).toBe(0xcafe);
     expect(reader.readBatch(32)).toBe(0xbeefbabe | 0);
@@ -773,9 +775,9 @@ describe('BitSourceReader', () => {
   });
   it('marks done after multiple bits', () => {
     const reader = new BitSourceReader([
-      { value: 0xcafe, bitCount: 16 },
-      { value: 0xbabe, bitCount: 16 },
-      { value: 0xdeadbeef, bitCount: 32 },
+      {value: 0xcafe, bitCount: 16},
+      {value: 0xbabe, bitCount: 16},
+      {value: 0xdeadbeef, bitCount: 32},
     ]);
     expect(reader.isClosed()).toBeFalse();
     reader.readBatch(16);
@@ -788,7 +790,7 @@ describe('BitSourceReader', () => {
     expect(reader.isClosed()).toBeTrue();
   });
   it('marks done after close', () => {
-    const reader = new BitSourceReader([{ value: 0xcafebabe, bitCount: 32 }]);
+    const reader = new BitSourceReader([{value: 0xcafebabe, bitCount: 32}]);
     expect(reader.isClosed()).toBeFalse();
     reader.readBatch(16);
     expect(reader.isClosed()).toBeFalse();
@@ -796,7 +798,7 @@ describe('BitSourceReader', () => {
     expect(reader.isClosed()).toBeTrue();
   });
   it('reports negative bitsremaining with arrays', () => {
-    const reader = new BitSourceReader([{ value: 0xcafebabe, bitCount: 32 }]);
+    const reader = new BitSourceReader([{value: 0xcafebabe, bitCount: 32}]);
     expect(reader.count()).toBe(32);
     reader.readBatch();
     // now that the stream is exhausted, there are known to be zero bits left
@@ -804,7 +806,7 @@ describe('BitSourceReader', () => {
   });
   it('reports negative one bitsremaining when not initialized', () => {
     const reader = new BitSourceReader(
-      [{ value: 0xcafebabe, bitCount: 32 }][Symbol.iterator](),
+      [{value: 0xcafebabe, bitCount: 32}][Symbol.iterator](),
     );
     expect(reader.count()).toBe(-1);
     reader.readBatch();
@@ -814,9 +816,9 @@ describe('BitSourceReader', () => {
   it('reports correct bits remaining when initialized', () => {
     const reader = new BitSourceReader(
       [
-        { value: 0xcafe, bitCount: 16 },
-        { value: 0xbabe, bitCount: 16 },
-        { value: 0xdeadbeef, bitCount: 32 },
+        {value: 0xcafe, bitCount: 16},
+        {value: 0xbabe, bitCount: 16},
+        {value: 0xdeadbeef, bitCount: 32},
       ],
       64,
     );
@@ -832,8 +834,8 @@ describe('BitSourceReader', () => {
   });
   it('returns bigint', () => {
     const reader = new BitSourceReader([
-      { value: 0xcafe, bitCount: 16 },
-      { value: 0xbabe, bitCount: 16 },
+      {value: 0xcafe, bitCount: 16},
+      {value: 0xbabe, bitCount: 16},
     ]);
     expect(reader.readBigBits(12)).toBe(0xafen);
     expect(reader.readBigBits(12)).toBe(0xbecn);
@@ -841,26 +843,26 @@ describe('BitSourceReader', () => {
   });
   it('returns remaining bigint', () => {
     const reader = new BitSourceReader([
-      { value: 0xcafe, bitCount: 16 },
-      { value: 0xbabe, bitCount: 16 },
+      {value: 0xcafe, bitCount: 16},
+      {value: 0xbabe, bitCount: 16},
     ]);
     expect(reader.readBigBits(12)).toBe(0xafen);
     expect(reader.readBigBits()).toBe(0xbabecn);
   });
   it('returns bigint larger than 64 bits', () => {
     const reader = new BitSourceReader([
-      { value: 0xcafebabe, bitCount: 32 },
-      { value: 0xdeadbeef, bitCount: 32 },
-      { value: 0xbad, bitCount: 12 },
+      {value: 0xcafebabe, bitCount: 32},
+      {value: 0xdeadbeef, bitCount: 32},
+      {value: 0xbad, bitCount: 12},
     ]);
     expect(reader.readBatch(4)).toBe(0xe);
     expect(reader.readBigBits(72)).toBe(0xbaddeadbeefcafebabn);
   });
   it('returns bigint larger than 64 bits', () => {
     const reader = new BitSourceReader([
-      { value: 0xcafebabe, bitCount: 32 },
-      { value: 0xdeadbeef, bitCount: 32 },
-      { value: 0xbad, bitCount: 12 },
+      {value: 0xcafebabe, bitCount: 32},
+      {value: 0xdeadbeef, bitCount: 32},
+      {value: 0xbad, bitCount: 12},
     ]);
     expect(reader.readBatch(4)).toBe(0xe);
     expect(reader.readBigBits(72)).toBe(0xbaddeadbeefcafebabn);
@@ -868,9 +870,9 @@ describe('BitSourceReader', () => {
   });
   it('returns remaining bigint larger than 64 bits', () => {
     const reader = new BitSourceReader([
-      { value: 0xcafebabe, bitCount: 32 },
-      { value: 0xdeadbeef, bitCount: 32 },
-      { value: 0xbad, bitCount: 12 },
+      {value: 0xcafebabe, bitCount: 32},
+      {value: 0xdeadbeef, bitCount: 32},
+      {value: 0xbad, bitCount: 12},
     ]);
     expect(reader.readBatch(4)).toBe(0xe);
     expect(reader.readBigBits()).toBe(0xbaddeadbeefcafebabn);

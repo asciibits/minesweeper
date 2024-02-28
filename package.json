@@ -9,7 +9,8 @@
     "clean": "rm -rf ./lib/* ./docs/*",
     "prettier-format": "prettier --config .prettierrc '**/*.ts' '**/*.html' '**/*.css' --write",
     "dist": "./dist.sh",
-    "dist-full": "npm run clean && npm run build && npm run dist"
+    "dist-full": "npm run clean && npm run build && npm run dist",
+    "lint": "npx eslint 'src/**'"
   },
   "keywords": [],
   "author": "",

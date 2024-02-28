@@ -1,11 +1,11 @@
-import { assert } from '../util/assert.js';
-import { decodeBase64, encodeBase64 } from '../util/base64.js';
+import {assert} from '../util/assert.js';
+import {decodeBase64, encodeBase64} from '../util/base64.js';
 import {
   decodeValue,
   encodeValueToBitSet,
 } from '../util/compression/arithmetic.js';
-import { BitSetWriter } from '../util/io.js';
-import { trace } from '../util/logging.js';
+import {BitSetWriter} from '../util/io.js';
+import {trace} from '../util/logging.js';
 import {
   DecodeMessageResponse,
   MessageRequest,
@@ -29,7 +29,7 @@ if (typeof window === 'undefined' && typeof onmessage !== 'undefined') {
     const message = e.data as Partial<MessageRequest>;
     switch (message.messageType) {
       case 'ENCODE': {
-        const { boardInfo } = message;
+        const {boardInfo} = message;
         assertBoardInfo(boardInfo);
         const boardId = encodeBase64(
           encodeValueToBitSet(boardInfo, boardCoder).toReader(),
@@ -41,7 +41,7 @@ if (typeof window === 'undefined' && typeof onmessage !== 'undefined') {
         break;
       }
       case 'DECODE': {
-        const { boardId } = message;
+        const {boardId} = message;
         assert(
           typeof boardId === 'string',
           'Invalid board id: ' + JSON.stringify(boardId),

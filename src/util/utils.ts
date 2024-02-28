@@ -46,7 +46,7 @@ export function asIterator<T>(
 ): Iterator<T> & Partial<HasLength> {
   return isIterator(iter)
     ? iter
-    : Object.assign(iter[Symbol.iterator](), { length: iter.length });
+    : Object.assign(iter[Symbol.iterator](), {length: iter.length});
 }
 
 export function asIterable<T>(
@@ -54,7 +54,7 @@ export function asIterable<T>(
 ): Iterable<T> & Partial<HasLength> {
   return isIterable(iter)
     ? iter
-    : { [Symbol.iterator]: () => iter, length: iter.length };
+    : {[Symbol.iterator]: () => iter, length: iter.length};
 }
 
 export function padLeft(s: string, c: string, len: number): string {

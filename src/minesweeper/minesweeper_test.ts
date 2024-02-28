@@ -1,5 +1,5 @@
-import { combinations } from '../util/combinitorics.js';
-import { MineField, OpeningRestrictions, Position } from './minesweeper.js';
+import {combinations} from '../util/combinitorics.js';
+import {MineField, OpeningRestrictions, Position} from './minesweeper.js';
 
 describe('MineField', () => {
   it('errors out with zero width or height', () => {
@@ -15,8 +15,8 @@ describe('MineField', () => {
   describe('initBombs', () => {
     it('has Bombs where expected', () => {
       const field = new MineField(4, 3, [
-        { x: 2, y: 1 },
-        { x: 3, y: 2 },
+        {x: 2, y: 1},
+        {x: 3, y: 2},
       ]);
       expect(field.getCellValue(2, 1)).toBeLessThan(0);
       expect(field.getCellValue(3, 2)).toBeLessThan(0);
@@ -51,8 +51,8 @@ describe('MineField', () => {
       expect(
         () =>
           new MineField(4, 3, [
-            { x: 1, y: 2 },
-            { x: 1, y: 2 },
+            {x: 1, y: 2},
+            {x: 1, y: 2},
           ]),
       ).toThrow();
     });
@@ -150,7 +150,7 @@ describe('MineField', () => {
 
     it('makes room for an initial position', () => {
       // This could maybe made deterministic, but it works as is for now
-      const field = MineField.createRandomMineField(4, 3, 2, [{ x: 2, y: 1 }]);
+      const field = MineField.createRandomMineField(4, 3, 2, [{x: 2, y: 1}]);
       expect(field.getCellValue(2, 1)).toBeGreaterThanOrEqual(0);
     });
 
@@ -160,7 +160,7 @@ describe('MineField', () => {
         4,
         3,
         2,
-        { x: 2, y: 1 },
+        {x: 2, y: 1},
         OpeningRestrictions.ZERO,
       );
       expect(field.getCellValue(2, 1)).toBe(0);
@@ -255,7 +255,8 @@ describe('MineField', () => {
 //         variableProbabilitySet.length
 //       );
 
-//       // // make sure the minemap is able to be recreated from the mineModeSet
+//       // // make sure the minemap is able to be recreated from the
+// //mineModeSet
 //       // const decodeIter = new BitSet().iterator();
 //       // const decoded = decodeArithmetic(
 //       //   mineModelSet,
@@ -414,7 +415,7 @@ function minefield(...rows: string[]): MineField {
     width = Math.max(width, row.length);
     for (let x = 0; x < row.length; x++) {
       if (row[x] === 'X') {
-        bombCells.push({ x, y });
+        bombCells.push({x, y});
       }
     }
   }

@@ -1,5 +1,5 @@
-import { BitSet, BitReader } from './io.js';
-import { testRandom } from './random.js';
+import {BitSet, BitReader} from './io.js';
+import {testRandom} from './random.js';
 import {
   BitExtendedCoder,
   DeltaCoder,
@@ -8,7 +8,7 @@ import {
   encodeGrid,
   encodeToBitset,
 } from './storage.js';
-import { bitset } from './test_utils.js';
+import {bitset} from './test_utils.js';
 
 describe('Storage', () => {
   describe('Variable Length Coder', () => {
@@ -455,9 +455,7 @@ describe('encodeGrid', () => {
       .writeBatch(0b01010101, 8)
       .writeBatch(0b10101010, 8)
       .writeBatch(0b01010101, 8);
-    expect(encodeGrid(input, 8).toBigInt()).toBe(
-      0b110101101011010110110110101101011010110110110101101011010110110110101101011010110111n,
-    );
+    expect(encodeGrid(input, 8).toBigInt()).toBe(0xd6b5b6b5adb5ad6dad6b7n);
     input = new BitSet();
     input
       .toWriter()
