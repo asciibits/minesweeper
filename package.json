@@ -10,7 +10,7 @@
     "prettier-format": "prettier --config .prettierrc '**/*.ts' '**/*.html' '**/*.css' --write",
     "dist": "./dist.sh",
     "dist-full": "npm run clean && npm run build && npm run dist",
-    "lint": "npx eslint 'src/**'"
+    "lint": "eslint 'src/**'"
   },
   "keywords": [],
   "author": "",
@@ -29,6 +29,7 @@
     "prettier": "^3.1.1",
     "prettier-plugin-jsdoc": "gitlab:gumen/prettier-plugin-jsdoc",
     "ts-node": "^10.9.2",
+    "tsx": "^4.7.1",
     "typescript": "^5.3.3"
   },
   "type": "module",
