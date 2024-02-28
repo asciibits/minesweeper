@@ -220,30 +220,44 @@ export function encodeToBitSet(
 }
 
 /** Convenience function to encode a value to a Writer */
-export function encodeValueToWriter<V>(
-  value: V | V[],
+export function encodeValuesToWriter<V>(
+  value: V[],
   coder: ArithmeticValueCoder<V>,
   writer: BitWriter,
   terminateStream = true,
 ): void {
-  value = Array.isArray(value) ? value : [value];
   const encoder = Arithmetic.encoder(writer);
   for (const val of value) {
     coder.encodeValue(val, encoder);
   }
   encoder.close(terminateStream);
 }
+export function encodeValueToWriter<V>(
+  value: V,
+  coder: ArithmeticValueCoder<V>,
+  writer: BitWriter,
+  terminateStream = true,
+): void {
+  return encodeValuesToWriter([value], coder, writer, terminateStream);
+}
 
 /** Convenience function to encode a value to a BitSet */
-export function encodeValueToBitSet<V>(
-  value: V | V[],
+export function encodeValuesToBitSet<V>(
+  value: V[],
   coder: ArithmeticValueCoder<V>,
   output?: BitSetWriter,
 ): BitSet {
   const bitset = output ? output.bitset : new BitSet();
   const writer = output ?? bitset.toWriter();
-  encodeValueToWriter(value, coder, writer, !!output);
+  encodeValuesToWriter(value, coder, writer, !!output);
   return bitset;
+}
+export function encodeValueToBitSet<V>(
+  value: V,
+  coder: ArithmeticValueCoder<V>,
+  output?: BitSetWriter,
+): BitSet {
+  return encodeValuesToBitSet([value], coder, output);
 }
 
 /**

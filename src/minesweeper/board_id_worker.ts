@@ -11,9 +11,11 @@ import {
   mineFieldsEqual,
 } from './minesweeper.js';
 import {
-  KnownBoardInfo,
+  EncodedBoardState,
+  KnownBoardState,
   OpenState,
-  assertBoardInfo,
+  assertBoardState,
+  assertEncodedBoardState,
 } from './minesweeper_storage.js';
 
 export interface BitSetInfo {
@@ -23,32 +25,32 @@ export interface BitSetInfo {
 
 export interface DecodeMessageRequest {
   messageType: 'DECODE';
-  boardId: string;
+  encodedBoardState: EncodedBoardState;
 }
 
 export interface DecodeMessageResponse {
   messageType: 'DECODE';
-  boardInfo: KnownBoardInfo;
+  boardState: KnownBoardState;
 }
 
 export interface EncodeMessageRequest {
   messageType: 'ENCODE';
-  boardInfo: KnownBoardInfo;
+  boardState: KnownBoardState;
 }
 
 export interface EncodeMessageResponse {
   messageType: 'ENCODE';
-  boardId: string;
+  encodedBoardState: EncodedBoardState;
 }
 
 export type MessageRequest = DecodeMessageRequest | EncodeMessageRequest;
 export type MessageResponse = DecodeMessageResponse | EncodeMessageResponse;
 
 export interface EncodeBoardIdListener {
-  handleEncodeResponse(boardId: string): void;
+  handleEncodeResponse(encodedBoardState: EncodedBoardState): void;
 }
 export interface DecodeBoardIdListener {
-  handleDecodeResponse(boardInfo: KnownBoardInfo): void;
+  handleDecodeResponse(boardState: KnownBoardState): void;
 }
 export class BoardIdWorker {
   private readonly worker: Worker;
@@ -100,17 +102,16 @@ export class BoardIdWorker {
       const messageResponse = e.data as Partial<MessageResponse>;
       switch (messageResponse.messageType) {
         case 'DECODE':
-          const {boardInfo} = messageResponse;
-          assertBoardInfo(boardInfo);
+          const {boardState: boardInfo} = messageResponse;
+          assertBoardState(boardInfo);
           this.decodeListeners.forEach(l => l.handleDecodeResponse(boardInfo));
           break;
         case 'ENCODE':
-          const {boardId} = messageResponse;
-          assert(
-            typeof boardId === 'string',
-            'Invalid board id: ' + JSON.stringify(boardId),
+          const {encodedBoardState} = messageResponse;
+          assertEncodedBoardState(encodedBoardState);
+          this.encodeListeners.forEach(l =>
+            l.handleEncodeResponse(encodedBoardState),
           );
-          this.encodeListeners.forEach(l => l.handleEncodeResponse(boardId!));
           break;
         default:
           throw new Error(
@@ -137,16 +138,19 @@ export class BoardIdWorker {
     );
     this.worker.postMessage({
       messageType: 'ENCODE',
-      boardInfo,
+      boardState: boardInfo,
     } as EncodeMessageRequest);
   }
 
-  requestDecode(boardId: string) {
+  requestDecode(encodedBoardState: EncodedBoardState) {
     assert(!this.terminated, 'BoardIdWorker has been terminated');
-    trace('[BoardIdWorker.requestDecode] Sending decode request: %o', boardId);
+    trace(
+      '[BoardIdWorker.requestDecode] Sending decode request: %o',
+      encodedBoardState,
+    );
     this.worker.postMessage({
       messageType: 'DECODE',
-      boardId,
+      encodedBoardState,
     } as DecodeMessageRequest);
   }
 
@@ -184,7 +188,7 @@ export class BoardIdWorker {
     assert(!this.terminated, 'BoardIdWorker has been terminated');
     trace('[BoardIdWorker.addDecodeToBoardListener]');
     const listener: DecodeBoardIdListener = {
-      handleDecodeResponse: (boardInfo: KnownBoardInfo) => {
+      handleDecodeResponse: (boardInfo: KnownBoardState) => {
         const mineField = getMineField(boardInfo);
         // only reset the board if we have a new minefield. This optimization
         // prevents building up the entire board when only a part of it is
@@ -219,7 +223,7 @@ export class BoardIdWorker {
         // have everything else properly rendered before showing the bomb
         // status)
         board.openGroup(openMines, {DECODING: true});
-        if (needsReset) {
+        if (needsReset && boardInfo.elapsedTime) {
           board.setTimeElapsed(boardInfo.elapsedTime, {DECODING: true});
         }
         // force a TIME event for completed game
@@ -250,7 +254,7 @@ export class BoardIdWorker {
   }
 }
 
-function getMineField(boardInfo: KnownBoardInfo) {
+function getMineField(boardInfo: KnownBoardState) {
   const {width, height, cellData} = boardInfo;
   return MineField.createMineFieldWithMineMap(
     width,
@@ -259,7 +263,7 @@ function getMineField(boardInfo: KnownBoardInfo) {
   );
 }
 
-function getBoardInfo(board: MineBoard): KnownBoardInfo {
+function getBoardInfo(board: MineBoard): KnownBoardState {
   const elapsedTime = board.getTimeElapsed();
   const view = board.getView();
   const {width, height} = view;

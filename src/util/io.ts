@@ -685,6 +685,80 @@ export abstract class AbstractBitReader implements BitReader {
   }
 }
 
+class BitIterReader extends AbstractBitReader {
+  constructor(private readonly iter: Iterator<Bit>) {
+    super();
+  }
+
+  protected override getBits(bitCount: number): number {
+    let val = 0;
+    for (let i = 0; i < bitCount; i++) {
+      const next = this.iter.next();
+      if (next.done) {
+        this.done = true;
+        throw new Error('Stream ended');
+      }
+      val |= next.value << i;
+    }
+    return val;
+  }
+}
+
+/** Convert any source of bits into a BitReader */
+export function toBitReader(source: IterType<Bit>): BitReader {
+  return new BitIterReader(asIterator(source));
+}
+
+class BitArrayWriter implements BitWriter {
+  private i = 0;
+  private closed = false;
+  constructor(private readonly output: Bit[]) {}
+
+  write(value: Bit): this {
+    assert(!this.closed);
+    this.output[this.i++] = value;
+    return this;
+  }
+  writeBatch(value: number, itemCount = 32): this {
+    for (let i = 0; i < itemCount; i++) {
+      this.write(((value >>> i) & 1) as Bit);
+    }
+    return this;
+  }
+  writeBigBits(value: bigint, itemCount = -1): this {
+    for (let i = 0; itemCount < 0 ? value : i < itemCount; i++) {
+      this.write(Number(value & 1n) as Bit);
+      value >>= 1n;
+    }
+    return this;
+  }
+  isClosed(): boolean {
+    return this.closed;
+  }
+  close(): void {
+    this.closed = true;
+  }
+  asBigBitWriter(): BigBitWriter {
+    const writer: BigBitWriter = {
+      write: v => {
+        this.write(v);
+        return writer;
+      },
+      writeBatch: (v, i) => {
+        this.writeBigBits(v, i);
+        return writer;
+      },
+      isClosed: () => this.isClosed(),
+      close: () => this.close(),
+      asBitWriter: () => this,
+    };
+    return writer;
+  }
+}
+export function toBitWriter(destination: Bit[]) {
+  return new BitArrayWriter(destination);
+}
+
 /**
  * A Reader backed by a BitSet. This supports starting at an arbitrary point in
  * the BitSet.

@@ -1,5 +1,4 @@
-import {constructHuffmanCode} from '../util/compression/huffman.js';
-import {BitSet, BitSetWriter} from '../util/io.js';
+import {Bit, BitSetWriter, toBitReader, toBitWriter} from '../util/io.js';
 import {DeltaCoder} from '../util/storage.js';
 import {assert} from '../util/assert.js';
 import {CellVisibleState, MineBoard, MineField} from './minesweeper.js';
@@ -10,19 +9,26 @@ import {
   BitExtendedCoder,
   CountCoder,
   NumberCoder,
+  decodeValue,
+  encodeValueToBitSet,
 } from '../util/compression/arithmetic.js';
 import {trace} from '../util/logging.js';
+import {decodeBase64, encodeBase64} from '../util/base64.js';
 
 /**
  * The state of a "known" board (i.e. a board where all the mine locations are
  * known in addition to what is exposed to the player). This provides enough
  * information to continue playing a game from a saved point.
  */
-export interface KnownBoardInfo {
-  height: number;
+export interface KnownBoardState {
   width: number;
-  elapsedTime: number;
+  height: number;
+
+  /** The cell data. The length of this will always be width * height */
   cellData: KnownCell[];
+
+  /** The elapsed time, if known. */
+  elapsedTime?: number;
 }
 
 /** The contents of a cell in a "known" game. */
@@ -38,26 +44,175 @@ export enum OpenState {
   FLAGGED = 2,
 }
 
-export function assertBoardInfo(
-  boardInfo?: unknown,
-): asserts boardInfo is KnownBoardInfo {
-  const info = boardInfo as Partial<KnownBoardInfo>;
+/**
+ * The compressed/encoded state of a "known" board. The information here should
+ * be 1-to-1 translatable to the information in KnownBoardInfo
+ */
+export interface EncodedBoardState {
+  /**
+   * An identifier that encodes the following:
+   * * width/height
+   * * mine count
+   * * mine placement
+   */
+  boardId: string;
+
+  /**
+   * An identifier that encodes the following:
+   * * open cells
+   * * flagged cells
+   * * closed cells
+   */
+  viewState?: string;
+
+  /**
+   * An encoded version of the elapsed time.
+   */
+  elapsedTime?: string;
+}
+
+export function encodeBoardId(boardInfo: KnownBoardState): string {
+  return encodeBase64(
+    encodeValueToBitSet(boardInfo, MINE_BOARD_CODER).toReader(),
+  );
+}
+
+export function encodeViewState(
+  boardInfo: KnownBoardState,
+): string | undefined {
+  let hasData = false;
+  const openState: OpenState[] = [];
+  for (const cell of boardInfo.cellData) {
+    const state = cell.openState ?? OpenState.CLOSED;
+    hasData ||= state !== OpenState.CLOSED;
+    openState.push(state);
+  }
+  if (!hasData) {
+    return undefined;
+  }
+  const minefield = MineField.createMineFieldWithMineMap(
+    boardInfo.width,
+    boardInfo.height,
+    boardInfo.cellData.map(c => c.isMine),
+  );
+  const coder = new OpenStateCoder(
+    boardInfo.width,
+    boardInfo.height,
+    minefield,
+  );
+  return encodeBase64(encodeValueToBitSet(openState, coder).toReader());
+}
+
+export function encodeElapsedTime(elapsedTime?: number): string | undefined {
+  if (!elapsedTime) return undefined;
+  return encodeBase64(
+    // use BigInt since time values may go beyond 32 bits... although, that
+    // would be a very long game.
+    new BitSetWriter().writeBigBits(BigInt(elapsedTime)).bitset.toReader(),
+  );
+}
+
+export function encodeBoardState(
+  boardState: KnownBoardState,
+): EncodedBoardState {
+  const boardId = encodeBoardId(boardState);
+  const viewState = encodeViewState(boardState);
+  const elapsedTime = encodeElapsedTime(boardState.elapsedTime);
+  return elapsedTime ? {boardId, viewState, elapsedTime} : {boardId, viewState};
+}
+
+/**
+ * This will return a new KnownBoardInfo. All cellData[x].openState will be
+ * unset.
+ */
+export function decodeBoardId(boardId: string): KnownBoardState {
+  return decodeValue(decodeBase64(boardId).bitset.toReader(), MINE_BOARD_CODER);
+}
+
+/**
+ * Decode the view state. This updates the boardInfo.cellData[x].openState
+ * values. The view state must have been generated from a similar boardInfo
+ * that had the same width,height, and mine placement. If this was not the case
+ * then the results are undefined. (Current implementation will end up filling
+ * the state with garbage)
+ */
+export function decodeViewState(
+  boardInfo: KnownBoardState,
+  viewState?: string,
+) {
+  if (!viewState) {
+    return;
+  }
+  const minefield = MineField.createMineFieldWithMineMap(
+    boardInfo.width,
+    boardInfo.height,
+    boardInfo.cellData.map(c => c.isMine),
+  );
+  const coder = new OpenStateCoder(
+    boardInfo.width,
+    boardInfo.height,
+    minefield,
+  );
+  const openState: OpenState[] = decodeValue(
+    decodeBase64(viewState).bitset.toReader(),
+    coder,
+  );
+  for (let i = 0; i < openState.length; i++) {
+    boardInfo.cellData[i].openState = openState[i];
+  }
+}
+
+export function decodeElapsedTime(elapsedTime?: string): number | undefined {
+  if (!elapsedTime) return undefined;
+  return Number(decodeBase64(elapsedTime).bitset.toBigInt());
+}
+
+export function decodeBoardState(
+  boardState: EncodedBoardState,
+): KnownBoardState {
+  const boardInfo = decodeBoardId(boardState.boardId);
+  decodeViewState(boardInfo, boardState.viewState);
+  const elapsedTime = decodeElapsedTime(boardState.elapsedTime);
+  if (elapsedTime) {
+    boardInfo.elapsedTime = elapsedTime;
+  }
+  return boardInfo;
+}
+
+export function assertBoardState(
+  boardState?: unknown,
+): asserts boardState is KnownBoardState {
+  const state = boardState as Partial<KnownBoardState>;
   assert(
-    typeof boardInfo === 'object' &&
-      !!boardInfo &&
-      typeof info.height === 'number' &&
-      typeof info.width === 'number' &&
-      Array.isArray(info.cellData),
-    'Invalid Board Info: ' + JSON.stringify(boardInfo),
+    typeof boardState === 'object' &&
+      !!boardState &&
+      typeof state.height === 'number' &&
+      typeof state.width === 'number' &&
+      Array.isArray(state.cellData) &&
+      state.cellData.length === state.height * state.width,
+    'Invalid Board State: ' + JSON.stringify(boardState),
+  );
+}
+
+export function assertEncodedBoardState(
+  encodedBoardState?: unknown,
+): asserts encodedBoardState is EncodedBoardState {
+  const state = encodedBoardState as Partial<EncodedBoardState>;
+  assert(
+    typeof state === 'object' &&
+      !!state &&
+      typeof state.boardId === 'string' &&
+      (!state.viewState || typeof state.viewState === 'string') &&
+      (!state.elapsedTime || typeof state.elapsedTime === 'string'),
+    'Invalid Encoded Board State: ' + JSON.stringify(encodedBoardState),
   );
 }
 
 class DimensionCoder implements ArithmeticValueCoder<Dimension> {
   private static readonly valueCoder = new BitExtendedCoder(4);
-  private static readonly timeElapsedCoder = new BitExtendedCoder(7);
 
   encodeValue(value: Dimension, encoder: ArithmeticEncoder): void {
-    const {height, width, elapsedTime} = value;
+    const {height, width} = value;
     if (height === 16 && width === 30) {
       // 0b11 -> Expert
       encoder.encodeBit(0.5, 1);
@@ -84,15 +239,6 @@ class DimensionCoder implements ArithmeticValueCoder<Dimension> {
         DeltaCoder.encode(width, height, 1),
         encoder,
       );
-    }
-    if (elapsedTime) {
-      encoder.encodeBit(0.5, 1);
-      DimensionCoder.timeElapsedCoder.encodeValue(
-        Math.trunc(elapsedTime / 500),
-        encoder,
-      );
-    } else {
-      encoder.encodeBit(0.5, 0);
     }
   }
   decodeValue(decoder: ArithmeticDecoder): Dimension {
@@ -122,12 +268,8 @@ class DimensionCoder implements ArithmeticValueCoder<Dimension> {
         1,
       );
     }
-    let elapsedTime = 0;
-    if (decoder.decodeBit(0.5)) {
-      elapsedTime = DimensionCoder.timeElapsedCoder.decodeValue(decoder) * 500;
-    }
 
-    return {width, height, elapsedTime};
+    return {width, height};
   }
 }
 
@@ -195,7 +337,7 @@ class MineCountCoder implements ArithmeticValueCoder<number> {
   }
 }
 
-class MineMapCoder implements ArithmeticValueCoder<BitSet> {
+class MineMapCoder implements ArithmeticValueCoder<Bit[]> {
   private readonly cellCount: number;
   private readonly mineCountCoder: MineCountCoder;
 
@@ -203,29 +345,23 @@ class MineMapCoder implements ArithmeticValueCoder<BitSet> {
     this.cellCount = width * height;
     this.mineCountCoder = new MineCountCoder(width, height);
   }
-  encodeValue(minemap: BitSet, encoder: ArithmeticEncoder): void {
-    let mineCount = 0;
-    for (let i = 0; i < this.cellCount; i++) {
-      if (minemap.getBit(i)) {
-        mineCount++;
-      }
-    }
-
+  encodeValue(minemap: Bit[], encoder: ArithmeticEncoder): void {
+    const mineCount = minemap.reduce<number>((t, v) => t + v, 0);
     this.mineCountCoder.encodeValue(mineCount, encoder);
     new CountCoder(this.cellCount, this.cellCount - mineCount).encode(
-      minemap.toReader(),
+      toBitReader(minemap),
       encoder,
     );
   }
 
-  decodeValue(decoder: ArithmeticDecoder): BitSet {
+  decodeValue(decoder: ArithmeticDecoder): Bit[] {
     const mineCount = this.mineCountCoder.decodeValue(decoder);
     const mineMapCoder = new CountCoder(
       this.cellCount,
       this.cellCount - mineCount,
     );
-    const minemap = new BitSet();
-    mineMapCoder.decode(decoder, minemap.toWriter());
+    const minemap: Bit[] = [];
+    mineMapCoder.decode(decoder, toBitWriter(minemap));
     return minemap;
   }
 }
@@ -447,73 +583,34 @@ class OpenStateCoder implements ArithmeticValueCoder<OpenState[]> {
   }
 }
 
-export class MineBoardCoder implements ArithmeticValueCoder<KnownBoardInfo> {
+class MineBoardCoder implements ArithmeticValueCoder<KnownBoardState> {
   private static readonly dimensionCoder = new DimensionCoder();
 
-  encodeValue(board: KnownBoardInfo, encoder: ArithmeticEncoder): void {
+  encodeValue(board: KnownBoardState, encoder: ArithmeticEncoder): void {
     const {width, height} = board;
-    const {minemap, openState} = splitKnownCells(board.cellData);
-    const mineField = MineField.createMineFieldWithMineMap(
-      width,
-      height,
-      [...minemap].map(b => !!b),
-    );
+    const mineMap: Bit[] = board.cellData.map(c => (c.isMine ? 1 : 0));
     MineBoardCoder.dimensionCoder.encodeValue(board, encoder);
-    new MineMapCoder(width, height).encodeValue(minemap, encoder);
-    new OpenStateCoder(width, height, mineField).encodeValue(
-      openState,
-      encoder,
-    );
+    new MineMapCoder(width, height).encodeValue(mineMap, encoder);
   }
 
-  decodeValue(decoder: ArithmeticDecoder): KnownBoardInfo {
-    const {width, height, elapsedTime} =
-      MineBoardCoder.dimensionCoder.decodeValue(decoder);
+  decodeValue(decoder: ArithmeticDecoder): KnownBoardState {
+    const {width, height} = MineBoardCoder.dimensionCoder.decodeValue(decoder);
     const minemap = new MineMapCoder(width, height).decodeValue(decoder);
-    const mineField = MineField.createMineFieldWithMineMap(
-      width,
-      height,
-      [...minemap].map(b => !!b),
-    );
-    const openState = new OpenStateCoder(width, height, mineField).decodeValue(
-      decoder,
-    );
+    const cellData: KnownCell[] = minemap.map(m => ({isMine: !!m}));
 
     return {
       width,
       height,
-      elapsedTime,
-      cellData: joinKnownCells(minemap, openState),
+      cellData,
     };
   }
 }
 
-function splitKnownCells(cells: KnownCell[]): {
-  minemap: BitSet;
-  openState: OpenState[];
-} {
-  const writer = new BitSetWriter();
-  const openState: OpenState[] = [];
-  for (const cell of cells) {
-    writer.write(cell.isMine ? 1 : 0);
-    openState.push(cell.openState ?? OpenState.CLOSED);
-  }
-  return {minemap: writer.bitset, openState};
-}
-
-function joinKnownCells(minemap: BitSet, openState: OpenState[]): KnownCell[] {
-  const cells: KnownCell[] = [];
-
-  for (let i = 0; i < openState.length; i++) {
-    cells.push({isMine: !!minemap.getBit(i), openState: openState[i]});
-  }
-  return cells;
-}
+const MINE_BOARD_CODER = new MineBoardCoder();
 
 interface Dimension {
   width: number;
   height: number;
-  elapsedTime: number;
 }
 
 function encodeOpenState(
@@ -757,171 +854,3 @@ export interface VisibleBoardInfo {
   width: number;
   cellState: CellVisibleState[];
 }
-
-/**
- * The compression below uses Huffman Codes to compress a mine bitmap. Consider
- * a board like:
- *
- * OOXOXO
- * XOOOXO
- * OOOOXO
- *
- * Here, 'O' represents an open cell, while 'X' represents a mine. This can
- * be represented as a bitmap using the value: 0b001010100010000010n
- *
- * Since the probability of an open cell ranges from about 0.7 up to about
- * 0.85, there is room for compression here. Optimal compression is given by:
- * log2(combination(w*h, m))/(w*h)
- *
- * Where w = width, h = height, m = mine-count, combination is the combination
- * function: combination(n, m) = n!/(m!*(n-m)!), and log2 is the log base-2.
- * For an "Expert" board where w = 30, h = 16, and m = 99, this gives an
- * optimal compression of 72.5%.
- *
- * Here, we are using a modified Huffman prefix code, with a lsd bit packing.
- * The code used here is optimized specifically for the Expert setup, and gives
- * an average compression rate of 74.0%, which is very close to optimal.
- *
- * For Intermediate boards (w = 16, h = 16, m = 40), optimal compression is
- * 61.0%, and this huffman encoding gives 64.3%. Similarly for Beginner
- * boards (w = 9, h = 9, m = 10) we have 50.3% and 57.9% respectively.
- */
-export const minefieldHuffmanCode = constructHuffmanCode([
-  [
-    {value: 0b000, bitCount: 3},
-    {value: 0b0, bitCount: 1},
-  ],
-  [
-    {value: 0b100, bitCount: 3},
-    {value: 0b001, bitCount: 3},
-  ],
-  [
-    {value: 0b010, bitCount: 3},
-    {value: 0b101, bitCount: 3},
-  ],
-  [
-    {value: 0b110, bitCount: 3},
-    {value: 0b00111, bitCount: 5},
-  ],
-  [
-    {value: 0b001, bitCount: 3},
-    {value: 0b011, bitCount: 3},
-  ],
-  [
-    {value: 0b101, bitCount: 3},
-    {value: 0b10111, bitCount: 5},
-  ],
-  [
-    {value: 0b011, bitCount: 3},
-    {value: 0b01111, bitCount: 5},
-  ],
-  [
-    {value: 0b111, bitCount: 3},
-    {value: 0b11111, bitCount: 5},
-  ],
-]);
-
-/**
- * Describe a boards play style. This affects the compression algorithm.
- * FULL_FLAG assumes that all (most) mines will be flagged. NO_FLAG assumes that
- * no (very few) mines will be flagged. And EFFICIENCY assumes that a mine is as
- * likely to be flagged as not.
- */
-export enum FlagMode {
-  FULL_FLAG,
-  NO_FLAG,
-  EFFICIENCY,
-}
-
-/**
- * An arithmetic model that gives a probability that the next cell is open based
- * on the status of its previous neighbors. This expected that the cells are
- * processed in grid order (one line or row at a time, no zig/zag ordering)
- */
-// export class OpenBoardModel implements ArithmeticModel {
-//   private previousRow: boolean[] = [];
-//   private currentRow: boolean[] = [];
-//   private y = 0;
-
-//   constructor(
-//     private readonly width: number,
-//     private readonly flagMode = FlagMode.FULL_FLAG,
-//     private readonly minemap?: boolean[]
-//   ) {
-//     assert(
-//       flagMode === FlagMode.FULL_FLAG || minemap !== null,
-//       'NO_FLAG and EFFICIENCY modes require a minemap'
-//     );
-//   }
-
-//   probabilityOfZero(): number {
-//     const upOpen = this.getUpOpen();
-//     const leftOpen = this.getLeftOpen();
-//     const isMine = this.minemap?.[this.y * this.width +
-// this.currentRow.length];
-
-//     if (this.flagMode === FlagMode.NO_FLAG && isMine) {
-//       // in NO_FLAG, all mines, regardless of neighbors, are left closed at a
-//       // rate of P_BOTH_MATCH
-//       return P_BOTH_MATCH;
-//     }
-//     if (upOpen === leftOpen && upOpen !== undefined) {
-//       // both match. For mines in EFFICIENCY mode, use 50/50 if neighbors are
-//       // open, otherwise use the standard low probability of being open
-//       return upOpen
-//         ? isMine && this.flagMode === FlagMode.EFFICIENCY
-//           ? 0.5
-//           : 1 - P_BOTH_MATCH
-//         : P_BOTH_MATCH;
-//     }
-//     if (
-//       (upOpen === undefined || leftOpen === undefined) &&
-//       upOpen !== leftOpen
-//     ) {
-//       // One match. For mines in EFFICIENCY mode, use 50/50 if neighbor is
-//       // open, otherwise use the standard low probability of being open
-//       return upOpen ?? leftOpen
-//         ? isMine && this.flagMode === FlagMode.EFFICIENCY
-//           ? 0.5
-//           : 1 - P_ONLY_MATCH
-//         : P_ONLY_MATCH;
-//     }
-
-//     // for cells with no knowledge, or cells with conflicting neighbors, use
-//     // 50%
-//     return 0.5;
-//   }
-
-//   private getLeftOpen(): boolean | undefined {
-//     if (!this.currentRow.length) {
-//       return undefined;
-//     }
-//     const x = this.currentRow.length - 1;
-//     const leftOpen = this.currentRow[x];
-//     if (leftOpen || this.flagMode === FlagMode.FULL_FLAG) {
-//       return leftOpen;
-//     }
-//     return this.minemap?.[this.y * this.width + x] ? undefined : false;
-//   }
-
-//   private getUpOpen(): boolean | undefined {
-//     if (!this.y) {
-//       return undefined;
-//     }
-//     const x = this.currentRow.length;
-//     const upOpen = this.previousRow[x];
-//     if (upOpen || this.flagMode === FlagMode.FULL_FLAG) {
-//       return upOpen;
-//     }
-//     return this.minemap?.[(this.y - 1) * this.width + x] ? undefined : false;
-//   }
-
-//   applySample(b: Bit) {
-//     this.currentRow.push(!!b);
-//     if (this.currentRow.length === this.width) {
-//       this.previousRow = this.currentRow;
-//       this.currentRow = [];
-//       this.y++;
-//     }
-//   }
-// }

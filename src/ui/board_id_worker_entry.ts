@@ -1,18 +1,13 @@
-import {assert} from '../util/assert.js';
-import {decodeBase64, encodeBase64} from '../util/base64.js';
-import {
-  decodeValue,
-  encodeValueToBitSet,
-} from '../util/compression/arithmetic.js';
-import {BitSetWriter} from '../util/io.js';
 import {trace} from '../util/logging.js';
 import {
   DecodeMessageResponse,
   MessageRequest,
 } from '../minesweeper/board_id_worker.js';
 import {
-  MineBoardCoder,
-  assertBoardInfo,
+  assertBoardState,
+  assertEncodedBoardState,
+  decodeBoardState,
+  encodeBoardState,
 } from '../minesweeper/minesweeper_storage.js';
 
 /**
@@ -20,38 +15,28 @@ import {
  * undefined when loaded as a node test
  */
 if (typeof window === 'undefined' && typeof onmessage !== 'undefined') {
-  /** Set up the board message handling */
-  const boardCoder = new MineBoardCoder();
-
   // setLoggingLevel(LoggingLevel.TRACE);
   onmessage = (e: MessageEvent) => {
     trace('Processing web worker event: %o', e);
     const message = e.data as Partial<MessageRequest>;
     switch (message.messageType) {
       case 'ENCODE': {
-        const {boardInfo} = message;
-        assertBoardInfo(boardInfo);
-        const boardId = encodeBase64(
-          encodeValueToBitSet(boardInfo, boardCoder).toReader(),
-        );
+        const {boardState} = message;
+        assertBoardState(boardState);
+        const encodedBoardState = encodeBoardState(boardState);
         postMessage({
           messageType: 'ENCODE',
-          boardId,
+          encodedBoardState,
         });
         break;
       }
       case 'DECODE': {
-        const {boardId} = message;
-        assert(
-          typeof boardId === 'string',
-          'Invalid board id: ' + JSON.stringify(boardId),
-        );
-        const writer = new BitSetWriter();
-        decodeBase64(boardId!, writer);
-        const boardInfo = decodeValue(writer.bitset.toReader(), boardCoder);
+        const {encodedBoardState} = message;
+        assertEncodedBoardState(encodedBoardState);
+        const boardState = decodeBoardState(encodedBoardState);
         postMessage({
           messageType: 'DECODE',
-          boardInfo,
+          boardState,
         } as DecodeMessageResponse);
         break;
       }

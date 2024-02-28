@@ -13,6 +13,7 @@ import {
   BoardEvent,
 } from '../minesweeper/minesweeper.js';
 import {BoardIdWorker} from '../minesweeper/board_id_worker.js';
+import {EncodedBoardState} from '../minesweeper/minesweeper_storage.js';
 
 let widthElement: HTMLInputElement;
 let heightElement: HTMLInputElement;
@@ -50,12 +51,24 @@ export function initUi(window: Window) {
     const resetButton = window.document.getElementById('reset') as HTMLElement;
     const resetHeader = window.document.getElementById('header') as HTMLElement;
 
-    function updateBoardIdDisplay(boardId: string, replace = false) {
+    function updateBoardIdDisplay(state?: EncodedBoardState, replace = false) {
       const url = new URL(location.href);
-      if (boardId) {
-        url.searchParams.set('board_id', boardId);
+      if (state?.boardId) {
+        url.searchParams.set('board_id', state?.boardId);
+        if (state?.viewState) {
+          url.searchParams.set('view_state', state?.viewState);
+        } else {
+          url.searchParams.delete('view_state');
+        }
+        if (state?.elapsedTime) {
+          url.searchParams.set('elapsed_time', state?.elapsedTime);
+        } else {
+          url.searchParams.delete('elapsed_time');
+        }
       } else {
         url.searchParams.delete('board_id');
+        url.searchParams.delete('view_state');
+        url.searchParams.delete('elapsed_time');
       }
       if (replace) {
         window.history.replaceState({}, '', url);
@@ -66,8 +79,10 @@ export function initUi(window: Window) {
     window.addEventListener('popstate', () => {
       const url = new URL(location.href);
       const boardId = url.searchParams.get('board_id');
+      const viewState = url.searchParams.get('view_state') ?? undefined;
+      const elapsedTime = url.searchParams.get('elapsed_time') ?? undefined;
       if (boardId) {
-        boardIdWorker.requestDecode(boardId);
+        boardIdWorker.requestDecode({boardId, viewState, elapsedTime});
       } else {
         // close all cells
         board.getAllCells().forEach(c => {
@@ -83,8 +98,8 @@ export function initUi(window: Window) {
       }
     }
     boardIdWorker.addEncodeListener({
-      handleEncodeResponse: (id: string) => {
-        updateBoardIdDisplay(id);
+      handleEncodeResponse: (encodedBoardState: EncodedBoardState) => {
+        updateBoardIdDisplay(encodedBoardState);
       },
     });
 
@@ -187,7 +202,7 @@ export function initUi(window: Window) {
             )
             .forEach(e => (e.checked = true));
           if (!e.attributes?.['DECODING']) {
-            updateBoardIdDisplay('');
+            updateBoardIdDisplay();
           }
           boardWrapper.classList.remove('blank');
           break;
@@ -269,7 +284,9 @@ export function initUi(window: Window) {
     const url = new URL(location.href);
     const boardId = url.searchParams.get('board_id');
     if (boardId) {
-      boardIdWorker.requestDecode(boardId);
+      const viewState = url.searchParams.get('view_state') ?? undefined;
+      const elapsedTime = url.searchParams.get('ellapsed_time') ?? undefined;
+      boardIdWorker.requestDecode({boardId, viewState, elapsedTime});
     } else {
       rebuildGame();
     }

@@ -1,19 +1,16 @@
-import {
-  decodeValue,
-  encodeValueToBitSet,
-} from '../util/compression/arithmetic.js';
-import {BitSet} from '../util/io.js';
 import {testRandom} from '../util/random.js';
 import {Cell, CellVisibleState, MineBoard, MineField} from './minesweeper.js';
 import {
-  KnownBoardInfo,
+  KnownBoardState,
   KnownCell,
-  MineBoardCoder,
+  encodeBoardState,
+  decodeBoardState,
   OpenState,
+  EncodedBoardState,
 } from './minesweeper_storage.js';
 
 describe('Minesweeper Storage', () => {
-  describe('MineBoardCoder', () => {
+  describe('encode/decode Board State', () => {
     it('round trip encode/decode for random board', () => {
       const samples = 25;
       for (let i = 0; i < samples; i++) {
@@ -36,19 +33,17 @@ describe('Minesweeper Storage', () => {
             openState,
           };
         }
-        const boardInfo: KnownBoardInfo = {
+        const boardInfo: KnownBoardState = {
           height,
           width,
-          elapsedTime: 0,
           cellData,
         };
-        const coder = new MineBoardCoder();
-        let boardId: BitSet | undefined = undefined;
-        let restoredBoardInfo: KnownBoardInfo | undefined = undefined;
+        let encoded: EncodedBoardState | undefined = undefined;
+        let restoredBoardInfo: KnownBoardState | undefined = undefined;
         try {
-          boardId = encodeValueToBitSet(boardInfo, coder);
+          encoded = encodeBoardState(boardInfo);
           // console.log('ratio" %d', boardId.length / cellCount);
-          restoredBoardInfo = decodeValue(boardId.toReader(), coder);
+          restoredBoardInfo = decodeBoardState(encoded);
           throwUnless(restoredBoardInfo).toEqual(boardInfo);
         } catch (e) {
           console.log('Error in round trip. Debug info: %o', {
@@ -59,7 +54,7 @@ describe('Minesweeper Storage', () => {
             restoredBoardInfo: {
               width: restoredBoardInfo?.width,
               height: restoredBoardInfo?.height,
-              mineMap: restoredBoardInfo?.cellData,
+              cellData: restoredBoardInfo?.cellData,
             },
             i,
           });
@@ -159,19 +154,17 @@ describe('Minesweeper Storage', () => {
             });
           }
         }
-        const boardInfo: KnownBoardInfo = {
+        const boardInfo: KnownBoardState = {
           height,
           width,
-          elapsedTime: 0,
           cellData,
         };
-        const coder = new MineBoardCoder();
-        let boardId: BitSet | undefined = undefined;
-        let restoredBoardInfo: KnownBoardInfo | undefined = undefined;
+        let encoded: EncodedBoardState | undefined = undefined;
+        let restoredBoardInfo: KnownBoardState | undefined = undefined;
         try {
-          boardId = encodeValueToBitSet(boardInfo, coder);
+          encoded = encodeBoardState(boardInfo);
           // console.log('ratio" %d', boardId.length / cellCount);
-          restoredBoardInfo = decodeValue(boardId.toReader(), coder);
+          restoredBoardInfo = decodeBoardState(encoded);
           throwUnless(restoredBoardInfo).toEqual(boardInfo);
         } catch (e) {
           console.log('Error in round trip. Debug info: %o', {
@@ -190,78 +183,35 @@ describe('Minesweeper Storage', () => {
           throw e;
         }
       }
-    }); // fit('test single round trip', () => {
-    //   setLoggingLevel(LoggingLevel.TRACE);
-    //   const width = 10;
-    //   const height = 10;
-    //   const cellCount = width * height;
-    //   const mineMap = 0n;
-    //   const openMap = 0n
-    //   const cellData: KnownCell[] = [];
-    //   for (let i = 0; i < cellCount; i++) {
-    //     const isMine = !!(mineMap & (1n << BigInt(i)));
-    //     const isOpen = !!(openMap & (1n << BigInt(i)));
-    //     cellData[i] = {
-    //       isMine: !!(mineMap & (1n << BigInt(i))),
-    //       openState: isOpen
-    //         ? isMine
-    //           ? OpenState.FLAGGED
-    //           : OpenState.OPENED
-    //         : OpenState.CLOSED,
-    //     };
-    //   }
-    //   const boardInfo: KnownBoardInfo = {
+    });
+    // fit('test single round trip', () => {
+    //   // setLoggingLevel(LoggingLevel.TRACE);
+    //   const width = 2;
+    //   const height = 2;
+
+    //   const cellData: KnownCell[] = [
+    //     {isMine: true, openState: OpenState.FLAGGED},
+    //     {isMine: false, openState: OpenState.CLOSED},
+    //     {isMine: false, openState: OpenState.CLOSED},
+    //     {isMine: false, openState: OpenState.OPENED},
+    //   ];
+    //   const boardState: KnownBoardState = {
     //     height,
     //     width,
     //     cellData,
     //   };
-    //   const coder = new MineBoardCoder();
-    //   let boardId: BitSet | undefined = undefined;
-    //   let restoredBoardInfo: KnownBoardInfo | undefined = undefined;
+    //   let encoded: EncodedBoardState | undefined = undefined;
+    //   let restoredBoardState: KnownBoardState | undefined = undefined;
     //   try {
-    //     boardId = encodeValueToBitSet(boardInfo, coder);
-    //     restoredBoardInfo = decodeValue(boardId.toReader(), coder);
-    //     throwUnless(restoredBoardInfo).toEqual(boardInfo);
+    //     encoded = encodeBoardState(boardState);
+    //     // console.log('ratio" %d', boardId.length / cellCount);
+    //     restoredBoardState = decodeBoardState(encoded);
+    //     throwUnless(restoredBoardState).toEqual(boardState);
     //   } catch (e) {
-    //     console.log('Error in round trip. Debug info: %o', {
-    //       width,
-    //       height,
-    //       mineMap: mineMap.toString(2),
-    //       openMap: openMap.toString(2),
-    //       restoredBoardInfo: {
-    //         width: restoredBoardInfo?.width,
-    //         height: restoredBoardInfo?.height,
-    //         mineMap: restoredBoardInfo?.cellData
-    //           .map(c => (c.isMine ? '1' : '0'))
-    //           .reverse()
-    //           .join(''),
-    //       },
+    //     console.log('Error in round trip. Debug state: %o', {
+    //       boardState,
+    //       restoredBoardState,
     //     });
-
-    //     console.log(
-    //       'MineMap: \n' +
-    //         MineField.createMineFieldWithMineMap(
-    //           width,
-    //           height,
-    //           [
-    //             ...biterator(
-    //               new BitSetWriter().writeBigBits(mineMap).bitset.toReader()
-    //             ),
-    //           ].map(b => !!b)
-    //         )
-    //     );
-    //     console.log(
-    //       'OpenMap: \n' +
-    //         MineField.createMineFieldWithMineMap(
-    //           width,
-    //           height,
-    //           [
-    //             ...biterator(
-    //               new BitSetWriter().writeBigBits(openMap).bitset.toReader()
-    //             ),
-    //           ].map(b => !!b)
-    //         )
-    //     );
 
     //     throw e;
     //   }

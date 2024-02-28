@@ -1,4 +1,4 @@
-import {BitReader, BitWriter} from './io.js';
+import {BitReader, BitSetWriter, BitWriter} from './io.js';
 
 // URL safe variant
 export const base64Digits =
@@ -30,8 +30,14 @@ export function encodeBase64(input: BitReader): string {
   }
 }
 
-export function decodeBase64(input: string, output: BitWriter): void {
+export function decodeBase64(input: string): BitSetWriter;
+export function decodeBase64(input: string, output: BitWriter): BitWriter;
+export function decodeBase64(
+  input: string,
+  output: BitWriter = new BitSetWriter(),
+): BitWriter {
   for (const c of input) {
     output.writeBatch(reverseBase64Digits[c.charCodeAt(0)], 6);
   }
+  return output;
 }

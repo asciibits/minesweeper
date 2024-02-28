@@ -12,6 +12,7 @@ import {
   decodeValues,
   encodeToBitSet,
   encodeValueToBitSet,
+  encodeValuesToBitSet,
 } from './arithmetic.js';
 import {combinations} from '../combinitorics.js';
 import {reverseBits} from '../utils.js';
@@ -901,7 +902,7 @@ describe('Arithmetic Coding', () => {
             }
             let encoded: BitSet | undefined = undefined;
             try {
-              encoded = encodeValueToBitSet([i, j, k], coder);
+              encoded = encodeValuesToBitSet([i, j, k], coder);
               throwUnless(encoded).toEqual(expected);
             } catch (e) {
               console.log('Error in compression. Data: %o', {
@@ -932,7 +933,7 @@ describe('Arithmetic Coding', () => {
         let decoded: number[] | undefined = undefined;
         try {
           const coder = new NumberCoder(max);
-          encoded = encodeValueToBitSet(input, coder);
+          encoded = encodeValuesToBitSet(input, coder);
           decoded = decodeValues(encoded.toReader(), coder, sampleCount);
           throwUnless(decoded).toEqual(input);
           throwUnless(encoded.length).toBeLessThanOrEqual(
@@ -1011,7 +1012,7 @@ describe('Arithmetic Coding', () => {
             }
             let encoded: BitSet | undefined = undefined;
             try {
-              encoded = encodeValueToBitSet(
+              encoded = encodeValuesToBitSet(
                 [values[i], values[j], values[k]],
                 trinary,
               );

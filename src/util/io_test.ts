@@ -6,6 +6,7 @@ import {
   biterator,
   concatenateReaders,
   interator,
+  toBitReader,
 } from './io.js';
 import {testRandom} from './random.js';
 import {bitset} from './test_utils.js';
@@ -726,6 +727,160 @@ describe('BitSet Reader / Writer', () => {
       });
     });
   });
+});
+describe('toBitReader', () => {
+  it('Reads single bits', () => {
+    const reader = toBitReader([1, 0, 0, 1, 0, 1, 1, 0]);
+    expect(reader.read()).toBe(1);
+    expect(reader.read()).toBe(0);
+    expect(reader.read()).toBe(0);
+    expect(reader.read()).toBe(1);
+    expect(reader.read()).toBe(0);
+    expect(reader.read()).toBe(1);
+    expect(reader.read()).toBe(1);
+    expect(reader.read()).toBe(0);
+    expect(() => reader.read()).toThrow();
+  });
+  // it('reports done after single bits', () => {
+  //   const reader = new BitSourceReader([
+  //     {value: 0b1, bitCount: 1},
+  //     {value: 0b0, bitCount: 1},
+  //   ]);
+  //   expect(reader.isClosed()).toBe(false);
+  //   reader.read();
+  //   expect(reader.isClosed()).toBe(false);
+  //   reader.read();
+  //   expect(reader.isClosed()).toBe(true);
+  // });
+  // it('reads multiple bits', () => {
+  //   const reader = new BitSourceReader([
+  //     {value: 0xcafe, bitCount: 16},
+  //     {value: 0xbabe, bitCount: 16},
+  //   ]);
+  //   expect(reader.readBatch(12)).toBe(0xafe);
+  //   expect(reader.readBatch(12)).toBe(0xbec);
+  //   expect(reader.readBatch(8)).toBe(0xba);
+  // });
+  // it('reads multiple bits across int boundaries', () => {
+  //   const reader = new BitSourceReader([
+  //     {value: 0xcafe, bitCount: 16},
+  //     {value: 0xbabe, bitCount: 16},
+  //     {value: 0xdeadbeef, bitCount: 32},
+  //   ]);
+  //   expect(reader.readBatch(16)).toBe(0xcafe);
+  //   expect(reader.readBatch(32)).toBe(0xbeefbabe | 0);
+  //   expect(reader.readBatch(16)).toBe(0xdead);
+  // });
+  // it('marks done after multiple bits', () => {
+  //   const reader = new BitSourceReader([
+  //     {value: 0xcafe, bitCount: 16},
+  //     {value: 0xbabe, bitCount: 16},
+  //     {value: 0xdeadbeef, bitCount: 32},
+  //   ]);
+  //   expect(reader.isClosed()).toBeFalse();
+  //   reader.readBatch(16);
+  //   expect(reader.isClosed()).toBeFalse();
+  //   reader.readBatch(16);
+  //   expect(reader.isClosed()).toBeFalse();
+  //   reader.readBatch(5);
+  //   expect(reader.isClosed()).toBeFalse();
+  //   reader.readBatch(27);
+  //   expect(reader.isClosed()).toBeTrue();
+  // });
+  // it('marks done after close', () => {
+  //   const reader = new BitSourceReader([{value: 0xcafebabe, bitCount: 32}]);
+  //   expect(reader.isClosed()).toBeFalse();
+  //   reader.readBatch(16);
+  //   expect(reader.isClosed()).toBeFalse();
+  //   reader.close();
+  //   expect(reader.isClosed()).toBeTrue();
+  // });
+  // it('reports negative bitsremaining with arrays', () => {
+  //   const reader = new BitSourceReader([{value: 0xcafebabe, bitCount: 32}]);
+  //   expect(reader.count()).toBe(32);
+  //   reader.readBatch();
+  //   // now that the stream is exhausted, there are known to be zero bits left
+  //   expect(reader.count()).toBe(0);
+  // });
+  // it('reports negative one bitsremaining when not initialized', () => {
+  //   const reader = new BitSourceReader(
+  //     [{value: 0xcafebabe, bitCount: 32}][Symbol.iterator](),
+  //   );
+  //   expect(reader.count()).toBe(-1);
+  //   reader.readBatch();
+  //   // now that the stream is exhausted, there are known to be zero bits left
+  //   expect(reader.count()).toBe(0);
+  // });
+  // it('reports correct bits remaining when initialized', () => {
+  //   const reader = new BitSourceReader(
+  //     [
+  //       {value: 0xcafe, bitCount: 16},
+  //       {value: 0xbabe, bitCount: 16},
+  //       {value: 0xdeadbeef, bitCount: 32},
+  //     ],
+  //     64,
+  //   );
+  //   expect(reader.count()).toBe(64);
+  //   reader.readBatch();
+  //   expect(reader.count()).toBe(32);
+  //   reader.read();
+  //   expect(reader.count()).toBe(31);
+  //   reader.readBatch(13);
+  //   expect(reader.count()).toBe(18);
+  //   reader.readBatch(18);
+  //   expect(reader.count()).toBe(0);
+  // });
+  // it('returns bigint', () => {
+  //   const reader = new BitSourceReader([
+  //     {value: 0xcafe, bitCount: 16},
+  //     {value: 0xbabe, bitCount: 16},
+  //   ]);
+  //   expect(reader.readBigBits(12)).toBe(0xafen);
+  //   expect(reader.readBigBits(12)).toBe(0xbecn);
+  //   expect(reader.readBigBits(8)).toBe(0xban);
+  // });
+  // it('returns remaining bigint', () => {
+  //   const reader = new BitSourceReader([
+  //     {value: 0xcafe, bitCount: 16},
+  //     {value: 0xbabe, bitCount: 16},
+  //   ]);
+  //   expect(reader.readBigBits(12)).toBe(0xafen);
+  //   expect(reader.readBigBits()).toBe(0xbabecn);
+  // });
+  // it('returns bigint larger than 64 bits', () => {
+  //   const reader = new BitSourceReader([
+  //     {value: 0xcafebabe, bitCount: 32},
+  //     {value: 0xdeadbeef, bitCount: 32},
+  //     {value: 0xbad, bitCount: 12},
+  //   ]);
+  //   expect(reader.readBatch(4)).toBe(0xe);
+  //   expect(reader.readBigBits(72)).toBe(0xbaddeadbeefcafebabn);
+  // });
+  // it('returns bigint larger than 64 bits', () => {
+  //   const reader = new BitSourceReader([
+  //     {value: 0xcafebabe, bitCount: 32},
+  //     {value: 0xdeadbeef, bitCount: 32},
+  //     {value: 0xbad, bitCount: 12},
+  //   ]);
+  //   expect(reader.readBatch(4)).toBe(0xe);
+  //   expect(reader.readBigBits(72)).toBe(0xbaddeadbeefcafebabn);
+  //   expect(reader.isClosed()).toBeTrue();
+  // });
+  // it('returns remaining bigint larger than 64 bits', () => {
+  //   const reader = new BitSourceReader([
+  //     {value: 0xcafebabe, bitCount: 32},
+  //     {value: 0xdeadbeef, bitCount: 32},
+  //     {value: 0xbad, bitCount: 12},
+  //   ]);
+  //   expect(reader.readBatch(4)).toBe(0xe);
+  //   expect(reader.readBigBits()).toBe(0xbaddeadbeefcafebabn);
+  //   expect(reader.isClosed()).toBeTrue();
+  // });
+  // it('masks values that are over-specified', () => {
+  //   const reader = BitSourceReader.create([0b1111011, 0b11000010], 6);
+  //   expect(reader.readBatch(6)).toBe(0b111011);
+  //   expect(reader.readBatch(6)).toBe(0b10);
+  // });
 });
 describe('BitSourceReader', () => {
   it('Reads single bits', () => {
