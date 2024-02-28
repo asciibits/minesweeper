@@ -89,13 +89,9 @@ export class VariableLengthQuantityCoder implements Coder<number> {
     return output.getBits(0);
   }
   decodeBigInt(input: BitReader): bigint {
-    const bitsRemaining = input.count();
-    return this.decodeBitSet(
-      input,
-      bitsRemaining < 0 ? 128 : bitsRemaining
-    ).toBigInt();
+    return this.decodeBitSet(input).toBigInt();
   }
-  private decodeBitSet(input: BitReader, initialCapacity = 64): BitSet {
+  private decodeBitSet(input: BitReader): BitSet {
     const output = new BitSetWriter();
     if (input.isClosed()) {
       return output.bitset;

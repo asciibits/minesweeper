@@ -60,7 +60,7 @@ export function initUi(window: Window) {
         window.history.pushState({}, '', url);
       }
     }
-    window.addEventListener('popstate', e => {
+    window.addEventListener('popstate', () => {
       const url = new URL(location.href);
       const boardId = url.searchParams.get('board_id');
       if (boardId) {
@@ -213,7 +213,7 @@ export function initUi(window: Window) {
         // changes in color palette don't affect the game
         return;
       }
-      const { width, height, mines, openingConfig } = getBoardConfig();
+      const { width, height, mines } = getBoardConfig();
       if (
         board.getView().width !== width ||
         board.getView().height !== height ||
@@ -234,7 +234,6 @@ export function initUi(window: Window) {
           // only care about left click
           return;
         }
-        const { width, height, mineCount: mines } = board.getView();
         switch (e.type) {
           case 'mousedown':
             resetButton.classList.add('pressed');
@@ -375,7 +374,7 @@ function getCellListener(board: MineBoard) {
   };
 }
 
-function getMouseListener(board: MineBoard, analyzer?: SimpleAnalyzer) {
+function getMouseListener(board: MineBoard, _analyzer?: SimpleAnalyzer) {
   return (event: MouseEvent) => {
     // const e = {
     //   type: event.type,

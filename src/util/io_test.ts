@@ -887,7 +887,6 @@ describe('concatenateReaders', () => {
     return new BitSetWriter().writeBigBits(val, bitCount).bitset.toReader();
   }
   it('concatenates empty readers', () => {
-    const bitset = new BitSet();
     expect(
       concatenateReaders([
         getReader(0n, 0),

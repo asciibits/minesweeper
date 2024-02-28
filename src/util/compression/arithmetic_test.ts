@@ -15,7 +15,6 @@ import {
 } from './arithmetic.js';
 import { combinations } from '../combinitorics.js';
 import { reverseBits } from '../utils.js';
-import { LoggingLevel, setLoggingLevel } from '../logging.js';
 
 describe('Arithmetic Coding', () => {
   describe('with trailing bits', () => {
@@ -892,7 +891,7 @@ describe('Arithmetic Coding', () => {
               .writeBatch(reverseBits(v1) >>> 27, 5)
               .bitset.trim();
             if (((v1 + 1) * 27) / 32 < v2 + 1) {
-              let alt = new BitSetWriter()
+              const alt = new BitSetWriter()
                 .writeBatch(reverseBits(v1 + 1) >>> 27, 5)
                 .bitset.trim();
               if (alt.length < expected.length) {
@@ -1002,7 +1001,7 @@ describe('Arithmetic Coding', () => {
               .writeBatch(reverseBits(v1) >>> 27, 5)
               .bitset.trim();
             if (((v1 + 1) * 27) / 32 < v2 + 1) {
-              let alt = new BitSetWriter()
+              const alt = new BitSetWriter()
                 .writeBatch(reverseBits(v1 + 1) >>> 27, 5)
                 .bitset.trim();
               if (alt.length < expected.length) {

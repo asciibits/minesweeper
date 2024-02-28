@@ -3,7 +3,6 @@ import {
   encodeValueToBitSet,
 } from '../util/compression/arithmetic.js';
 import { BitSet } from '../util/io.js';
-import { LoggingLevel, setLoggingLevel, trace } from '../util/logging.js';
 import { testRandom } from '../util/random.js';
 import { Cell, CellVisibleState, MineBoard, MineField } from './minesweeper.js';
 import {
@@ -76,7 +75,7 @@ describe('Minesweeper Storage', () => {
         const height = testRandom.getRandomInteger(150, 1);
         const cellCount = width * height;
         const numberOfOpenings = testRandom.getRandomInteger(6, 1);
-        const openings = Array.from({ length: numberOfOpenings }).map(v => ({
+        const openings = Array.from({ length: numberOfOpenings }).map(() => ({
           x: testRandom.getRandomInteger(width),
           y: testRandom.getRandomInteger(height),
         }));

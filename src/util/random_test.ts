@@ -126,7 +126,7 @@ describe('Random', () => {
     });
     it('preserves all provided bits exactly', () => {
       const r = new Random(new TestRandomBitSource([0xcafebabe, 0x7dead000]));
-      let v = r.getRandomDouble();
+      const v = r.getRandomDouble();
       expect(v.toString(16)).toBe('0.7deadcafebabe');
     });
   });

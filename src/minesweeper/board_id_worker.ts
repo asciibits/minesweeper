@@ -15,7 +15,6 @@ import {
   OpenState,
   assertBoardInfo,
 } from './minesweeper_storage.js';
-import { Stats } from './stats.js';
 
 export interface BitSetInfo {
   buffer: number[];
@@ -42,24 +41,8 @@ export interface EncodeMessageResponse {
   boardId: string;
 }
 
-export interface StatsMessageRequest {
-  messageType: 'STATS';
-  boardInfo: KnownBoardInfo;
-}
-
-export interface StatsMessageResponse {
-  messageType: 'STATS';
-  stats: Stats;
-}
-
-export type MessageRequest =
-  | DecodeMessageRequest
-  | EncodeMessageRequest
-  | StatsMessageRequest;
-export type MessageResponse =
-  | DecodeMessageResponse
-  | EncodeMessageResponse
-  | StatsMessageResponse;
+export type MessageRequest = DecodeMessageRequest | EncodeMessageRequest;
+export type MessageResponse = DecodeMessageResponse | EncodeMessageResponse;
 
 export interface EncodeBoardIdListener {
   handleEncodeResponse(boardId: string): void;
@@ -67,15 +50,10 @@ export interface EncodeBoardIdListener {
 export interface DecodeBoardIdListener {
   handleDecodeResponse(boardInfo: KnownBoardInfo): void;
 }
-export interface StatsListener {
-  handleStatsResponse(stats: Stats): void;
-}
-
 export class BoardIdWorker {
   private readonly worker: Worker;
   private readonly encodeListeners = new Set<EncodeBoardIdListener>();
   private readonly decodeListeners = new Set<DecodeBoardIdListener>();
-  private readonly statsListeners = new Set<StatsListener>();
   private readonly boardListeners = new Map<MineBoard, DecodeBoardIdListener>();
   private terminated = false;
 
@@ -144,11 +122,6 @@ export class BoardIdWorker {
           );
           this.encodeListeners.forEach(l => l.handleEncodeResponse(boardId!));
           break;
-        case 'STATS':
-          let { stats } = messageResponse;
-          assert(stats, 'Stats not found in response');
-          this.statsListeners.forEach(l => l.handleStatsResponse(stats!));
-          break;
         default:
           throw new Error(
             'Unrecognized message response type: ' +
@@ -185,20 +158,6 @@ export class BoardIdWorker {
       messageType: 'DECODE',
       boardId,
     } as DecodeMessageRequest);
-  }
-
-  requestStats(board: MineBoard) {
-    assert(!this.terminated, 'BoardIdWorker has been terminated');
-    const start = Date.now();
-    const boardInfo = getBoardInfo(board);
-    const mid = Date.now();
-    trace('[BoardIdWorker.requestStats] Sending encode request: %o', boardInfo);
-    const mid2 = Date.now();
-    this.worker.postMessage({
-      messageType: 'STATS',
-      boardInfo,
-    } as StatsMessageRequest);
-    const end = Date.now();
   }
 
   addEncodeListener(listener: EncodeBoardIdListener) {
@@ -290,23 +249,10 @@ export class BoardIdWorker {
     }
   }
 
-  addStatsListener(listener: StatsListener) {
-    assert(!this.terminated, 'BoardIdWorker has been terminated');
-    trace('[BoardIdWorker.addStatsListener]');
-    this.statsListeners.add(listener);
-  }
-
-  removeStatsListener(listener: StatsListener) {
-    assert(!this.terminated, 'BoardIdWorker has been terminated');
-    trace('[BoardIdWorker.removeStatsListener]');
-    this.statsListeners.delete(listener);
-  }
-
   terminate() {
     this.terminated = true;
     this.encodeListeners.clear();
     this.decodeListeners.clear();
-    this.statsListeners.clear();
     this.boardListeners.clear();
     this.worker.terminate();
   }

@@ -607,7 +607,7 @@ function boundedEncoder(
     isClosed() {
       return bitCount! <= 0 || encoder.isClosed();
     },
-    clone(writer: BitWriter) {
+    clone() {
       throw new Error('Not Implemented');
     },
   };
@@ -1039,7 +1039,7 @@ function generateModelTree(symbols: ArithmeticSymbol[]): Node {
     for (let i = 0; i < item.value.length; i++) {
       const bit = item.value.getBit(i);
       node.weights[bit] += item.weight;
-      let child = (node.children[bit] = node.children[bit] ?? {
+      const child = (node.children[bit] = node.children[bit] ?? {
         weights: [0, 0],
         children: [undefined, undefined],
         isLeaf: false,

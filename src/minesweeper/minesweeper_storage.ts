@@ -1,5 +1,5 @@
 import { constructHuffmanCode } from '../util/compression/huffman.js';
-import { BitSet, BitSetWriter, BitReader } from '../util/io.js';
+import { BitSet, BitSetWriter } from '../util/io.js';
 import { DeltaCoder } from '../util/storage.js';
 import { assert } from '../util/assert.js';
 import { CellVisibleState, MineBoard, MineField } from './minesweeper.js';
@@ -451,7 +451,7 @@ export class MineBoardCoder implements ArithmeticValueCoder<KnownBoardInfo> {
   private static readonly dimensionCoder = new DimensionCoder();
 
   encodeValue(board: KnownBoardInfo, encoder: ArithmeticEncoder): void {
-    const { width, height, elapsedTime } = board;
+    const { width, height } = board;
     const { minemap, openState } = splitKnownCells(board.cellData);
     const mineField = MineField.createMineFieldWithMineMap(
       width,
@@ -602,7 +602,7 @@ function generateTally(
     cells: 0,
     closedInOpenGroup: 0,
   };
-  let board = new MineBoard(mineField);
+  const board = new MineBoard(mineField);
 
   let i = 0;
   for (let y = 0; y < height; y++) {
@@ -661,8 +661,8 @@ function pOpenState(
     tally,
     flagRatio,
   });
-  let openCellsRemaining = tally.opened - tally.openMines;
-  let nonMineCellsRemaining = tally.cells - tally.mines;
+  const openCellsRemaining = tally.opened - tally.openMines;
+  const nonMineCellsRemaining = tally.cells - tally.mines;
 
   // The raw probabilities that the current cell is open or flagged. This
   // does not yet consider the neighbor's status, or the board state
@@ -706,7 +706,7 @@ function pOpenState(
     // neighbors' open state. A 0.5 indicates no information (no
     // neighbors, or ex. two neighbors that don't agree). A 1 indicates all
     // neighbors are open. A 0 indicates all neighbors are closed.
-    let neighborOpenWeight =
+    const neighborOpenWeight =
       neighborCount === 0 ? 0.5 : neighborsOpen / neighborCount;
 
     // we use Math.pow to "lift" or "suppress" a probability. For example,
@@ -756,32 +756,6 @@ export interface VisibleBoardInfo {
   height: number;
   width: number;
   cellState: CellVisibleState[];
-}
-
-export function decodeViewMap(
-  reader: BitReader,
-  cellData: KnownCell[],
-  mineCount: number
-) {
-  const hasViewMap = !!reader.read();
-  if (!hasViewMap) {
-    // nothing to do
-    return;
-  }
-
-  const openBits = Math.max(31 - Math.clz32(cellData.length - mineCount), 1);
-  // const openCount = new BitExtendedCoder(openBits).decode(reader);
-
-  const flagBits = Math.max(31 - Math.clz32(mineCount), 1);
-  // const flagCount = new BitExtendedCoder(flagBits).decode(reader);
-
-  for (let i = 0; i < cellData.length; i++) {
-    cellData[i].openState = reader.read()
-      ? reader.read()
-        ? OpenState.FLAGGED
-        : OpenState.OPENED
-      : OpenState.CLOSED;
-  }
 }
 
 /**
@@ -858,19 +832,6 @@ export enum FlagMode {
   NO_FLAG,
   EFFICIENCY,
 }
-
-/**
- * This is the probability that if two neighbors are both open (or closed) that
- * the current cells is open (or closed). There is a very high correlation
- * here; This was estiamted from observing stats during typical game play.
- */
-const P_BOTH_MATCH = 0.97;
-
-/**
- * This is the probability that if there is only one nieghbor, that the
- * open-state of the curren cell matches.
- */
-const P_ONLY_MATCH = 0.92;
 
 /**
  * An arithmetic model that gives a probability that the next cell is open based

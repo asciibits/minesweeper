@@ -135,7 +135,7 @@ class EmptyReader implements Reader<unknown, unknown> {
     throw new Error('End of stream');
   }
 
-  readBatch(bitCount = 32): unknown {
+  readBatch(): unknown {
     throw new Error('End of stream');
   }
 
@@ -143,7 +143,7 @@ class EmptyReader implements Reader<unknown, unknown> {
     return 1;
   }
 
-  readBigBits(bitCount?: number): unknown {
+  readBigBits(): unknown {
     throw new Error('End of stream');
   }
 
@@ -566,7 +566,7 @@ export class BitSet implements Iterable<Bit> {
   }
 
   toString(radix = 2): string {
-    let r = this.toBigInt().toString(radix);
+    const r = this.toBigInt().toString(radix);
     return (
       '0'.repeat(
         Math.max(
