@@ -22,14 +22,14 @@ describe('Arithmetic Coding', () => {
       return encodeToBitSet(
         bitset.toReader(),
         new FixedProbabilityArithmeticCoder(p, bitCount),
-        new BitSetWriter()
+        new BitSetWriter(),
       );
     }
     function decode(bitset: BitSet, p: number, bitCount?: number): BitSet {
       return decodeToBitSet(
         bitset.toReader(),
         new FixedProbabilityArithmeticCoder(p, bitCount),
-        new BitSetWriter()
+        new BitSetWriter(),
       );
     }
     describe('encodeArithmetic', () => {
@@ -62,7 +62,7 @@ describe('Arithmetic Coding', () => {
         bitset = new BitSetWriter().writeBigBits(0xdeadbadbeefcafebaben).bitset;
         encoded = new BitSetWriter().writeBigBits(
           0x6885e2473d778c3d2n,
-          67
+          67,
         ).bitset;
         expect(encode(bitset, 1 / 3)).toEqual(encoded);
       });
@@ -96,10 +96,10 @@ describe('Arithmetic Coding', () => {
         expect(decode(bitset, 1 / 3, 3)).toEqual(decoded);
         bitset = new BitSetWriter().writeBigBits(
           0x6885e2473d778c3d2n,
-          67
+          67,
         ).bitset;
         decoded = new BitSetWriter().writeBigBits(
-          0xdeadbadbeefcafebaben
+          0xdeadbadbeefcafebaben,
         ).bitset;
         expect(decode(bitset, 1 / 3, 76)).toEqual(decoded);
       });
@@ -155,13 +155,13 @@ describe('Arithmetic Coding', () => {
     function encode(bitset: BitSet, p: number, bitCount?: number): BitSet {
       return encodeToBitSet(
         bitset.toReader(),
-        new FixedProbabilityArithmeticCoder(p, bitCount)
+        new FixedProbabilityArithmeticCoder(p, bitCount),
       );
     }
     function decode(bitset: BitSet, p: number, bitCount?: number): BitSet {
       return decodeToBitSet(
         bitset.toReader(),
-        new FixedProbabilityArithmeticCoder(p, bitCount)
+        new FixedProbabilityArithmeticCoder(p, bitCount),
       );
     }
     describe('encodeArithmetic', () => {
@@ -225,7 +225,7 @@ describe('Arithmetic Coding', () => {
         expect(decode(bitset, 1 / 3, 3)).toEqual(decoded);
         bitset = new BitSetWriter().writeBigBits(0x1885e2473d778c3d2n).bitset;
         decoded = new BitSetWriter().writeBigBits(
-          0xdeadbadbeefcafebaben
+          0xdeadbadbeefcafebaben,
         ).bitset;
         expect(decode(bitset, 1 / 3, 76)).toEqual(decoded);
       });
@@ -369,7 +369,7 @@ describe('Arithmetic Coding', () => {
             decoded = decodeToBitSet(encoded.toReader(), coder);
             throwUnless(decoded).toEqual(input);
             expect(encoded.length).toBeLessThanOrEqual(
-              combinations(n, z).toString(2).length
+              combinations(n, z).toString(2).length,
             );
           } catch (e) {
             console.log('Error in round trip: %o', {
@@ -421,7 +421,7 @@ describe('Arithmetic Coding', () => {
         let encoded = encodeToBitSet(
           input.toReader(),
           coder,
-          new BitSetWriter()
+          new BitSetWriter(),
         );
         let expected = new BitSetWriter().writeBatch(0b000, 3).bitset;
         expect(encoded).toEqual(expected);
@@ -458,7 +458,7 @@ describe('Arithmetic Coding', () => {
         let decoded = decodeToBitSet(
           input.toReader(),
           coder,
-          new BitSetWriter()
+          new BitSetWriter(),
         );
         let expected = new BitSetWriter().writeBatch(0b1100, 4).bitset;
         expect(decoded).toEqual(expected);
@@ -510,16 +510,16 @@ describe('Arithmetic Coding', () => {
             encoded = encodeToBitSet(
               input.toReader(),
               coder,
-              new BitSetWriter()
+              new BitSetWriter(),
             );
             decoded = decodeToBitSet(
               encoded.toReader(),
               coder,
-              new BitSetWriter()
+              new BitSetWriter(),
             );
             throwUnless(decoded).toEqual(input);
             throwUnless(encoded.length).toBeLessThanOrEqual(
-              combinations(n, z).toString(2).length + 1
+              combinations(n, z).toString(2).length + 1,
             );
           } catch (e) {
             console.log('Error in round trip: %o', {
@@ -574,27 +574,27 @@ describe('Arithmetic Coding', () => {
         let input = bitset(0b000, 3);
         let expected = bitset(0b0000, 4);
         expect(
-          encodeToBitSet(input.toReader(), coder, new BitSetWriter())
+          encodeToBitSet(input.toReader(), coder, new BitSetWriter()),
         ).toEqual(expected);
         input = bitset(0b100, 3);
         expected = bitset(0b0100, 4);
         expect(
-          encodeToBitSet(input.toReader(), coder, new BitSetWriter())
+          encodeToBitSet(input.toReader(), coder, new BitSetWriter()),
         ).toEqual(expected);
         input = bitset(0b010, 3);
         expected = bitset(0b0010, 4);
         expect(
-          encodeToBitSet(input.toReader(), coder, new BitSetWriter())
+          encodeToBitSet(input.toReader(), coder, new BitSetWriter()),
         ).toEqual(expected);
         input = bitset(0b001, 3);
         expected = bitset(0b0001, 4);
         expect(
-          encodeToBitSet(input.toReader(), coder, new BitSetWriter())
+          encodeToBitSet(input.toReader(), coder, new BitSetWriter()),
         ).toEqual(expected);
         input = bitset(0b111, 3);
         expected = bitset(0b0111, 4);
         expect(
-          encodeToBitSet(input.toReader(), coder, new BitSetWriter())
+          encodeToBitSet(input.toReader(), coder, new BitSetWriter()),
         ).toEqual(expected);
       });
       it('decodes within payloadinfo', () => {
@@ -602,27 +602,27 @@ describe('Arithmetic Coding', () => {
         let input = bitset(0b0000, 4);
         let expected = bitset(0b000, 3);
         expect(
-          decodeToBitSet(input.toReader(), coder, new BitSetWriter())
+          decodeToBitSet(input.toReader(), coder, new BitSetWriter()),
         ).toEqual(expected);
         input = bitset(0b0100, 4);
         expected = bitset(0b100, 3);
         expect(
-          decodeToBitSet(input.toReader(), coder, new BitSetWriter())
+          decodeToBitSet(input.toReader(), coder, new BitSetWriter()),
         ).toEqual(expected);
         input = bitset(0b0010, 4);
         expected = bitset(0b010, 3);
         expect(
-          decodeToBitSet(input.toReader(), coder, new BitSetWriter())
+          decodeToBitSet(input.toReader(), coder, new BitSetWriter()),
         ).toEqual(expected);
         input = bitset(0b0001, 4);
         expected = bitset(0b001, 3);
         expect(
-          decodeToBitSet(input.toReader(), coder, new BitSetWriter())
+          decodeToBitSet(input.toReader(), coder, new BitSetWriter()),
         ).toEqual(expected);
         input = bitset(0b0111, 4);
         expected = bitset(0b111, 3);
         expect(
-          decodeToBitSet(input.toReader(), coder, new BitSetWriter())
+          decodeToBitSet(input.toReader(), coder, new BitSetWriter()),
         ).toEqual(expected);
       });
       it('encodes the extra bit exactly', () => {
@@ -630,27 +630,27 @@ describe('Arithmetic Coding', () => {
         let input = bitset(0b1000, 4);
         let expected = bitset(0b01000, 5);
         expect(
-          encodeToBitSet(input.toReader(), coder, new BitSetWriter())
+          encodeToBitSet(input.toReader(), coder, new BitSetWriter()),
         ).toEqual(expected);
         input = bitset(0b1100, 4);
         expected = bitset(0b01100, 5);
         expect(
-          encodeToBitSet(input.toReader(), coder, new BitSetWriter())
+          encodeToBitSet(input.toReader(), coder, new BitSetWriter()),
         ).toEqual(expected);
         input = bitset(0b1010, 4);
         expected = bitset(0b01010, 5);
         expect(
-          encodeToBitSet(input.toReader(), coder, new BitSetWriter())
+          encodeToBitSet(input.toReader(), coder, new BitSetWriter()),
         ).toEqual(expected);
         input = bitset(0b1001, 4);
         expected = bitset(0b01001, 5);
         expect(
-          encodeToBitSet(input.toReader(), coder, new BitSetWriter())
+          encodeToBitSet(input.toReader(), coder, new BitSetWriter()),
         ).toEqual(expected);
         input = bitset(0b1111, 4);
         expected = bitset(0b01111, 5);
         expect(
-          encodeToBitSet(input.toReader(), coder, new BitSetWriter())
+          encodeToBitSet(input.toReader(), coder, new BitSetWriter()),
         ).toEqual(expected);
       });
       it('decodes the extra bit exactly', () => {
@@ -658,27 +658,27 @@ describe('Arithmetic Coding', () => {
         let input = bitset(0b01000, 5);
         let expected = bitset(0b1000, 4);
         expect(
-          decodeToBitSet(input.toReader(), coder, new BitSetWriter())
+          decodeToBitSet(input.toReader(), coder, new BitSetWriter()),
         ).toEqual(expected);
         input = bitset(0b01100, 5);
         expected = bitset(0b1100, 4);
         expect(
-          decodeToBitSet(input.toReader(), coder, new BitSetWriter())
+          decodeToBitSet(input.toReader(), coder, new BitSetWriter()),
         ).toEqual(expected);
         input = bitset(0b01010, 5);
         expected = bitset(0b1010, 4);
         expect(
-          decodeToBitSet(input.toReader(), coder, new BitSetWriter())
+          decodeToBitSet(input.toReader(), coder, new BitSetWriter()),
         ).toEqual(expected);
         input = bitset(0b01001, 5);
         expected = bitset(0b1001, 4);
         expect(
-          decodeToBitSet(input.toReader(), coder, new BitSetWriter())
+          decodeToBitSet(input.toReader(), coder, new BitSetWriter()),
         ).toEqual(expected);
         input = bitset(0b01111, 5);
         expected = bitset(0b1111, 4);
         expect(
-          decodeToBitSet(input.toReader(), coder, new BitSetWriter())
+          decodeToBitSet(input.toReader(), coder, new BitSetWriter()),
         ).toEqual(expected);
       });
       it('encodes additional extra bits', () => {
@@ -686,12 +686,12 @@ describe('Arithmetic Coding', () => {
         let input = bitset(0b11010, 5);
         let expected = bitset(0b0111111010, 10);
         expect(
-          encodeToBitSet(input.toReader(), coder, new BitSetWriter())
+          encodeToBitSet(input.toReader(), coder, new BitSetWriter()),
         ).toEqual(expected);
         input = bitset(0b10010, 5);
         expected = bitset(0b101111010, 9);
         expect(
-          encodeToBitSet(input.toReader(), coder, new BitSetWriter())
+          encodeToBitSet(input.toReader(), coder, new BitSetWriter()),
         ).toEqual(expected);
       });
       it('decodes additional extra bits', () => {
@@ -699,12 +699,12 @@ describe('Arithmetic Coding', () => {
         let input = bitset(0b0111111010, 10);
         let expected = bitset(0b11010, 5);
         expect(
-          decodeToBitSet(input.toReader(), coder, new BitSetWriter())
+          decodeToBitSet(input.toReader(), coder, new BitSetWriter()),
         ).toEqual(expected);
         input = bitset(0b101111010, 9);
         expected = bitset(0b10010, 5);
         expect(
-          decodeToBitSet(input.toReader(), coder, new BitSetWriter())
+          decodeToBitSet(input.toReader(), coder, new BitSetWriter()),
         ).toEqual(expected);
       });
       it('encodes 32-bit round trip', () => {
@@ -763,7 +763,7 @@ describe('Arithmetic Coding', () => {
         const samples = 100;
         for (let i = 0; i < samples; i++) {
           const val = testRandom.getRandomBigBits(
-            testRandom.getRandomBigInteger(512n, 1n)
+            testRandom.getRandomBigInteger(512n, 1n),
           );
           const bitCount = testRandom.getRandomInteger(32);
           const p = testRandom.getRandomDouble();
@@ -935,7 +935,7 @@ describe('Arithmetic Coding', () => {
           decoded = decodeValues(encoded.toReader(), coder, sampleCount);
           throwUnless(decoded).toEqual(input);
           throwUnless(encoded.length).toBeLessThanOrEqual(
-            Math.ceil(sampleCount * Math.log2(max))
+            Math.ceil(sampleCount * Math.log2(max)),
           );
         } catch (e) {
           console.log('Round trip fail. Data: %o', {
@@ -1012,7 +1012,7 @@ describe('Arithmetic Coding', () => {
             try {
               encoded = encodeValueToBitSet(
                 [values[i], values[j], values[k]],
-                trinary
+                trinary,
               );
               throwUnless(encoded).toEqual(expected);
             } catch (e) {
@@ -1054,7 +1054,7 @@ describe('Arithmetic Coding', () => {
             symbols.map(v => ({
               value: new BitSet(v.value, bitCount),
               weight: v.weight ? v.weight : Number.EPSILON,
-            }))
+            })),
           );
           encoded = encodeToBitSet(input.toReader(), model, sampleCount);
           decoded = decodeToBitSet(encoded.toReader(), model, sampleCount);

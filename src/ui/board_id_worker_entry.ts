@@ -32,7 +32,7 @@ if (typeof window === 'undefined' && typeof onmessage !== 'undefined') {
         const { boardInfo } = message;
         assertBoardInfo(boardInfo);
         const boardId = encodeBase64(
-          encodeValueToBitSet(boardInfo, boardCoder).toReader()
+          encodeValueToBitSet(boardInfo, boardCoder).toReader(),
         );
         postMessage({
           messageType: 'ENCODE',
@@ -44,7 +44,7 @@ if (typeof window === 'undefined' && typeof onmessage !== 'undefined') {
         const { boardId } = message;
         assert(
           typeof boardId === 'string',
-          'Invalid board id: ' + JSON.stringify(boardId)
+          'Invalid board id: ' + JSON.stringify(boardId),
         );
         const writer = new BitSetWriter();
         decodeBase64(boardId!, writer);

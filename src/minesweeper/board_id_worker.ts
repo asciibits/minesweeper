@@ -92,20 +92,20 @@ export class BoardIdWorker {
         e.error,
         e.filename,
         e.lineno,
-        e
+        e,
       );
     };
     this.worker.onmessageerror = (e: MessageEvent) => {
       error(
         '[BoardIdWorker.worker.onerror] Got error. Data: %oevent: %o',
         e.data,
-        e
+        e,
       );
     };
     this.worker.onmessage = (e: MessageEvent) => {
       trace(
         '[BoardIdWorker.worker.onmessage] Message to worker received: %o',
-        e
+        e,
       );
       const messageResponse = e.data as Partial<MessageResponse>;
       switch (messageResponse.messageType) {
@@ -118,14 +118,14 @@ export class BoardIdWorker {
           const { boardId } = messageResponse;
           assert(
             typeof boardId === 'string',
-            'Invalid board id: ' + JSON.stringify(boardId)
+            'Invalid board id: ' + JSON.stringify(boardId),
           );
           this.encodeListeners.forEach(l => l.handleEncodeResponse(boardId!));
           break;
         default:
           throw new Error(
             'Unrecognized message response type: ' +
-              JSON.stringify(messageResponse)
+              JSON.stringify(messageResponse),
           );
       }
     };
@@ -143,7 +143,7 @@ export class BoardIdWorker {
     const boardInfo = getBoardInfo(board);
     trace(
       '[BoardIdWorker.requestEncode] Sending encode request: %o',
-      boardInfo
+      boardInfo,
     );
     this.worker.postMessage({
       messageType: 'ENCODE',
@@ -187,6 +187,8 @@ export class BoardIdWorker {
   /**
    * Add a decode listener that updates a given `MineBoard`. All events will
    * have the attribute: 'DECODING; set to 'true;
+   *
+   * @param board The board to receive all decoded info.
    */
   addDecodeToBoardListener(board: MineBoard) {
     assert(!this.terminated, 'BoardIdWorker has been terminated');
@@ -263,7 +265,7 @@ function getMineField(boardInfo: KnownBoardInfo) {
   return MineField.createMineFieldWithMineMap(
     width,
     height,
-    cellData.map(c => c.isMine)
+    cellData.map(c => c.isMine),
   );
 }
 

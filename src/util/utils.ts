@@ -42,7 +42,7 @@ export function isIterable<T>(input: IterType<T>): input is Iterable<T> {
 }
 
 export function asIterator<T>(
-  iter: IterType<T>
+  iter: IterType<T>,
 ): Iterator<T> & Partial<HasLength> {
   return isIterator(iter)
     ? iter
@@ -50,7 +50,7 @@ export function asIterator<T>(
 }
 
 export function asIterable<T>(
-  iter: IterType<T>
+  iter: IterType<T>,
 ): Iterable<T> & Partial<HasLength> {
   return isIterable(iter)
     ? iter

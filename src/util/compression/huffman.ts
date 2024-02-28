@@ -23,7 +23,7 @@ export class HuffmanEncoder
 {
   constructor(
     private readonly huffmanModel: HuffmanModel,
-    private readonly input: BitReader
+    private readonly input: BitReader,
   ) {}
 
   next(): IteratorResult<HuffmanSymbol> {
@@ -51,13 +51,13 @@ export class HuffmanEncoder
 export function encodeHuffman(
   input: BitReader,
   model: HuffmanModel,
-  output: BitWriter
+  output: BitWriter,
 ): void;
 export function encodeHuffman(input: BitReader, model: HuffmanModel): BitSet;
 export function encodeHuffman(
   input: BitReader,
   model: HuffmanModel,
-  output?: BitWriter
+  output?: BitWriter,
 ): BitSet | undefined {
   const bitset = output ? undefined : new BitSet();
   output = output ?? new BitSetWriter(bitset!);
@@ -80,11 +80,11 @@ interface GenerateNode {
 type SymbolOrNode = GenerateNode | WeightedHuffmanSymbol;
 
 export function generateHuffmanCode(
-  weightedSymbols: WeightedHuffmanSymbol[]
+  weightedSymbols: WeightedHuffmanSymbol[],
 ): HuffmanCode {
   assert(
     weightedSymbols.length > 1,
-    'Need more than one symbol to construct Huffman model'
+    'Need more than one symbol to construct Huffman model',
   );
   // ideally this would be a priority queue, but for our work, a sorted list
   // will be fine. Especially since there will be at most one value out of
@@ -177,7 +177,7 @@ function constructHuffmanModel(mappings: SymbolPair[]): HuffmanModel {
         model[idx] = next = [undefined, undefined];
       } else if (!Array.isArray(next)) {
         throw new Error(
-          `Found conflicting encode values. 0b${symbolToString({ value: input.value & ((1 << i) - 1), bitCount: i })} is a prefix for 0b${symbolToString(input)}.`
+          `Found conflicting encode values. 0b${symbolToString({ value: input.value & ((1 << i) - 1), bitCount: i })} is a prefix for 0b${symbolToString(input)}.`,
         );
       }
       model = next;
@@ -185,7 +185,7 @@ function constructHuffmanModel(mappings: SymbolPair[]): HuffmanModel {
     const idx = (input.value >>> (input.bitCount - 1)) & 1;
     if (model[idx]) {
       throw new Error(
-        `Found conflicting encode values. 0b${symbolToString(input)} is a prefix for another value.`
+        `Found conflicting encode values. 0b${symbolToString(input)} is a prefix for another value.`,
       );
     }
     model[idx] = code;
@@ -193,7 +193,7 @@ function constructHuffmanModel(mappings: SymbolPair[]): HuffmanModel {
 
   function assertFullTree(
     model: PartialHuffmanModel,
-    prefix: string = ''
+    prefix: string = '',
   ): asserts model is HuffmanModel {
     for (const i of [0, 1]) {
       const child = model[i];

@@ -11,10 +11,10 @@ describe('Random', () => {
   describe('getRandomBits', () => {
     it('returns the 32-bit value unchanged', () => {
       expect(new Random(new TestRandomBitSource([13])).getRandomBits(32)).toBe(
-        13
+        13,
       );
       expect(new Random(new TestRandomBitSource([-1])).getRandomBits(32)).toBe(
-        0xffffffff
+        0xffffffff,
       );
     });
     it('uses one random for multiple sets of bits', () => {
@@ -37,10 +37,10 @@ describe('Random', () => {
   describe('getRandomBigBits', () => {
     it('returns the 32-bit value unchanged', () => {
       expect(
-        new Random(new TestRandomBitSource([13])).getRandomBigBits(32n)
+        new Random(new TestRandomBitSource([13])).getRandomBigBits(32n),
       ).toBe(13n);
       expect(
-        new Random(new TestRandomBitSource([-1])).getRandomBigBits(32n)
+        new Random(new TestRandomBitSource([-1])).getRandomBigBits(32n),
       ).toBe(0xffffffffn);
     });
     it('uses one random for multiple sets of bits', () => {
@@ -61,7 +61,7 @@ describe('Random', () => {
     });
     it('combines values to create bigints', () => {
       const r = new Random(
-        new TestRandomBitSource([0xcafebabe, 0xdeadbeef, 0xba5eba11])
+        new TestRandomBitSource([0xcafebabe, 0xdeadbeef, 0xba5eba11]),
       );
       expect(r.getRandomBigBits(52n)).toBe(0xcafebabedeadbn);
       expect(r.getRandomBigBits(40n)).toBe(0xba5eba11een);

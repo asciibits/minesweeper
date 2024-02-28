@@ -32,14 +32,14 @@ export interface Position {
 function positionIndex(
   p: Position | number,
   width: number,
-  height: number
+  height: number,
 ): number {
   if (typeof p === 'number') {
     return p;
   }
   assert(
     p.x >= 0 && p.x < width && p.y >= 0 && p.y < height,
-    'position outside grid'
+    'position outside grid',
   );
   return p.y * width + p.x;
 }
@@ -81,7 +81,7 @@ export class DelayedMineField implements MineFieldView {
     public readonly height: number,
     public readonly mineCount: number,
     private readonly openingRestriction = OpeningRestrictions.ZERO,
-    private readonly rand?: Random
+    private readonly rand?: Random,
   ) {
     assert(width > 0 && height > 0, 'Width and height must be positive');
     assert(mineCount >= 0, 'Mine count must be positive');
@@ -109,7 +109,7 @@ export class DelayedMineField implements MineFieldView {
         this.mineCount,
         { x, y },
         this.openingRestriction,
-        this.rand
+        this.rand,
       );
     }
     return this.delegate.getCellValue(x, y);
@@ -132,7 +132,7 @@ export class MineField implements MineFieldView {
   constructor(
     public readonly width: number,
     public readonly height: number,
-    mines: Array<number | Position>
+    mines: Array<number | Position>,
   ) {
     assert(width > 0 && height > 0, 'Width and height must be positive values');
     assert(mines.length <= width * height, 'Mine count must be <= cell count');
@@ -145,13 +145,13 @@ export class MineField implements MineFieldView {
     height: number,
     mineCount: number,
     reservedPositions?: Array<number | Position>,
-    rand?: Random
+    rand?: Random,
   ): MineField {
     const cellCount = width * height;
 
     const reservedSet = new Set<number>();
     for (const p of reservedPositions?.map(rp =>
-      positionIndex(rp, width, height)
+      positionIndex(rp, width, height),
     ) ?? []) {
       assert(!reservedSet.has(p), `reserved cell already added`);
       reservedSet.add(p);
@@ -160,7 +160,7 @@ export class MineField implements MineFieldView {
     // Make sure there's enough space for the mines
     assert(
       mineCount <= cellCount - reservedSet.size,
-      `Not enough room for the requested number of mines`
+      `Not enough room for the requested number of mines`,
     );
 
     // To determine the random mine positions, first create an array of all
@@ -169,10 +169,10 @@ export class MineField implements MineFieldView {
     // position after it. Those first 'b' positions become the mines.
     const mines = choose(
       Array.from({ length: cellCount }, (_v, i) => i).filter(
-        p => !reservedSet.has(p)
+        p => !reservedSet.has(p),
       ),
       mineCount,
-      rand
+      rand,
     );
 
     return new MineField(width, height, mines);
@@ -184,7 +184,7 @@ export class MineField implements MineFieldView {
     mineCount: number,
     openingPosition?: Position,
     openingRestriction = OpeningRestrictions.ANY,
-    rand?: Random
+    rand?: Random,
   ): MineField {
     const { x, y } = openingPosition ?? { x: 0, y: 0 };
     const reservedPositions: Position[] = [];
@@ -213,7 +213,7 @@ export class MineField implements MineFieldView {
       height,
       mineCount,
       reservedPositions,
-      rand
+      rand,
     );
   }
 
@@ -221,7 +221,7 @@ export class MineField implements MineFieldView {
     width: number,
     height: number,
     mines: number,
-    boardNumber: bigint
+    boardNumber: bigint,
   ) {
     const size = width * height;
 
@@ -239,7 +239,7 @@ export class MineField implements MineFieldView {
   static createMineFieldWithMineMap(
     width: number,
     height: number,
-    mineMap: boolean[]
+    mineMap: boolean[],
   ) {
     const mineCells: number[] = [];
     for (let i = 0; i < mineMap.length; i++) {
@@ -272,11 +272,11 @@ export class MineField implements MineFieldView {
       const x = typeof p === 'number' ? p - y * w : p.x;
       assert(
         y >= 0 && y < h && x >= 0 && x < w,
-        'Mine position is outside the grid'
+        'Mine position is outside the grid',
       );
       if (this.board[x + y * w] < 0) {
         throw new Error(
-          `Same cell marked as mine more than once: {X: ${x}, y: ${y}}`
+          `Same cell marked as mine more than once: {X: ${x}, y: ${y}}`,
         );
       }
       // Set the cell to a mine
@@ -345,7 +345,7 @@ export class MineField implements MineFieldView {
         Array.from({ length: this.width })
           .map((_v, x) => board[x + y * this.width])
           .map(v => (v === CellVisibleState.MINE ? 'X' : String(v)))
-          .join('')
+          .join(''),
       )
       .join('\n');
   }
@@ -493,7 +493,7 @@ export class MineBoard {
       if (y === undefined) {
         assert(
           xOrPosition >= 0 && xOrPosition < this.cells.length,
-          'Index out of bounds'
+          'Index out of bounds',
         );
         return this.cells[xOrPosition];
       } else {
@@ -502,7 +502,7 @@ export class MineBoard {
             xOrPosition < this.view.width &&
             y >= 0 &&
             y < this.view.height,
-          'position outside grid'
+          'position outside grid',
         );
         return this.cells[xOrPosition + y * this.view.width];
       }
@@ -558,7 +558,7 @@ export class MineBoard {
 
   setClockEventInterval(
     clockEventInterval: number,
-    attributes?: Record<string, unknown>
+    attributes?: Record<string, unknown>,
   ) {
     this.clockEventInterval = clockEventInterval;
     if (clockEventInterval > 0) {
@@ -687,7 +687,7 @@ export class Cell {
 
   constructor(
     public readonly position: Readonly<Position>,
-    private readonly board: MineBoard
+    private readonly board: MineBoard,
   ) {}
 
   getVisibleState(): CellVisibleState {
@@ -762,7 +762,7 @@ export class Cell {
     if (adjacentFlags === this.peek()) {
       this.board.openGroup(
         this.board.expandZeroGroup(adjacentClosed),
-        attributes
+        attributes,
       );
     }
   }
@@ -996,7 +996,7 @@ export class SimpleAnalyzer {
       cell.getVisibleState() < 0 ||
         cell.getVisibleState() <=
           unresolvedNeighbors.length + inferredData.adjacentMines,
-      `not enough room for remaining mines: ${JSON.stringify(cell.position)}`
+      `not enough room for remaining mines: ${JSON.stringify(cell.position)}`,
     );
     if (unresolvedNeighbors.length) {
       if (inferredData.adjacentMines === cell.getVisibleState()) {

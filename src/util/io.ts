@@ -111,7 +111,7 @@ export function* byterator(input: BitReader): Generator<number> {
 /** Use a Reader object as an Iterator of bits */
 export function* interator(
   input: BitReader,
-  bitsPerVal = 32
+  bitsPerVal = 32,
 ): Generator<number> {
   assert(bitsPerVal > 0 && bitsPerVal <= 32, 'Bit count must be > 0 and <= 32');
   while (!input.isClosed()) {
@@ -119,7 +119,7 @@ export function* interator(
     yield input.readBatch(
       bitsRemaining < 0 || bitsRemaining >= bitsPerVal
         ? bitsPerVal
-        : bitsRemaining
+        : bitsRemaining,
     );
   }
 }
@@ -365,7 +365,7 @@ export class BitSet implements Iterable<Bit> {
     bitCount = bitCount ?? 32;
     assert(
       bitCount >= 0 && bitCount <= 32,
-      'bitCount must be between 0 and 32'
+      'bitCount must be between 0 and 32',
     );
     return this.setBits(val, this._length, this._length + bitCount);
   }
@@ -387,7 +387,7 @@ export class BitSet implements Iterable<Bit> {
     if (bitPos + bitCount <= 32) {
       // short circuit for single buffer
       return BigInt(
-        ((this.bits[bytePos] >>> bitPos) & (0xffffffff >>> -bitCount)) >>> 0
+        ((this.bits[bytePos] >>> bitPos) & (0xffffffff >>> -bitCount)) >>> 0,
       );
     }
     const bigBitCount = BigInt(bitCount);
@@ -422,7 +422,7 @@ export class BitSet implements Iterable<Bit> {
   setBigBits(val: bigint, start: number, end?: number): number {
     assert(
       start >= 0 && (end === undefined || end >= start),
-      'start or end out of range'
+      'start or end out of range',
     );
 
     if (start === end) {
@@ -491,7 +491,7 @@ export class BitSet implements Iterable<Bit> {
     return this.setBigBits(
       val,
       this._length,
-      bitCount === undefined ? bitCount : this._length + bitCount
+      bitCount === undefined ? bitCount : this._length + bitCount,
     );
   }
 
@@ -571,8 +571,8 @@ export class BitSet implements Iterable<Bit> {
       '0'.repeat(
         Math.max(
           Math.trunc(Math.log(2 ** this.length) / Math.log(radix)) - r.length,
-          0
-        )
+          0,
+        ),
       ) + r
     );
   }
@@ -612,7 +612,7 @@ export abstract class AbstractBitReader implements BitReader {
     assert(!this.done, 'End of stream');
     assert(
       bitCount >= 0 && bitCount <= 32,
-      'bitCount must be between 0 and 32 inclusive'
+      'bitCount must be between 0 and 32 inclusive',
     );
     try {
       this.bitsAvailable -= bitCount;
@@ -695,7 +695,7 @@ export class BitSetReader extends AbstractBitReader {
   constructor(
     readonly bitset: BitSet,
     start = 0,
-    public end?: number
+    public end?: number,
   ) {
     super();
     assert(start >= 0, 'start must be non-negative');
@@ -712,7 +712,7 @@ export class BitSetReader extends AbstractBitReader {
   protected override getBits(bitCount: number): number {
     assert(
       this.pos + bitCount <= (this.end ?? this.bitset.length),
-      'No data available'
+      'No data available',
     );
     const start = this.pos;
     this.pos += bitCount;
@@ -744,7 +744,7 @@ export class BitSetWriter implements BitWriter {
   constructor(
     bitset = new BitSet(),
     start = bitset.length,
-    public end?: number
+    public end?: number,
   ) {
     assert(start >= 0, 'start must be non-negative');
     assert(end === undefined || end >= start, 'end must be greater than start');
@@ -838,7 +838,7 @@ export class BitSourceReader extends AbstractBitReader {
       // we can calculate the bitCount with an array
       this.bitsAvailable = source.reduce(
         (a: number, c: Bits) => a + c.bitCount,
-        0
+        0,
       );
     }
     this.source = asIterator(source);
@@ -848,12 +848,12 @@ export class BitSourceReader extends AbstractBitReader {
   static create(source: number, bitCount: number): BitSourceReader;
   static create(
     source: number | number[],
-    bitsPerInput: number
+    bitsPerInput: number,
   ): BitSourceReader {
     source = typeof source === 'number' ? [source] : source;
     return new BitSourceReader(
       source.map(s => ({ value: s, bitCount: bitsPerInput })),
-      bitsPerInput * source.length
+      bitsPerInput * source.length,
     );
   }
 
@@ -909,7 +909,7 @@ export class BitSourceReader extends AbstractBitReader {
       } else {
         assert(
           next.value.bitCount >= 0 && next.value.bitCount <= 32,
-          'bitcount must be between 1 and 32 inclusive'
+          'bitcount must be between 1 and 32 inclusive',
         );
         this.value = next.value.value;
         this.bitCount = next.value.bitCount;
@@ -974,7 +974,7 @@ export function concatenateReaders(readers: BitReader[]): BitReader {
 export function copy<T, M>(
   source: Reader<T, M>,
   destination: Writer<T, M>,
-  bitCount?: number
+  bitCount?: number,
 ): void {
   bitCount = bitCount ?? Number.MAX_VALUE;
   const maxBatch = source.maxBatch();

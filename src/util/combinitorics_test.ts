@@ -79,34 +79,34 @@ describe('Lexical Ordering', () => {
     });
     it('returns marks all at the beginning with choose - 1', () => {
       expect(bitmapFromLexicalOrdering(combinations(1, 0) - 1n, 1, 0)).toBe(
-        0b0n
+        0b0n,
       );
       expect(bitmapFromLexicalOrdering(combinations(1, 1) - 1n, 1, 1)).toBe(
-        0b1n
+        0b1n,
       );
       expect(bitmapFromLexicalOrdering(combinations(2, 1) - 1n, 2, 1)).toBe(
-        0b10n
+        0b10n,
       );
       expect(bitmapFromLexicalOrdering(combinations(3, 1) - 1n, 3, 1)).toBe(
-        0b100n
+        0b100n,
       );
       expect(bitmapFromLexicalOrdering(combinations(3, 2) - 1n, 3, 2)).toBe(
-        0b110n
+        0b110n,
       );
       expect(bitmapFromLexicalOrdering(combinations(4, 0) - 1n, 4, 0)).toBe(
-        0b0000n
+        0b0000n,
       );
       expect(bitmapFromLexicalOrdering(combinations(4, 1) - 1n, 4, 1)).toBe(
-        0b1000n
+        0b1000n,
       );
       expect(bitmapFromLexicalOrdering(combinations(4, 2) - 1n, 4, 2)).toBe(
-        0b1100n
+        0b1100n,
       );
       expect(bitmapFromLexicalOrdering(combinations(4, 3) - 1n, 4, 3)).toBe(
-        0b1110n
+        0b1110n,
       );
       expect(bitmapFromLexicalOrdering(combinations(4, 4) - 1n, 4, 4)).toBe(
-        0b1111n
+        0b1111n,
       );
     });
     it('returns expected map for all n: 5, k: 2', () => {

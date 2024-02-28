@@ -12,28 +12,28 @@ interface SidebarState {
 if (win) {
   win.addEventListener('load', () => {
     const expertChip = document.getElementById(
-      'expert_chip'
+      'expert_chip',
     ) as HTMLInputElement;
     const beginnerChip = document.getElementById(
-      'beginner_chip'
+      'beginner_chip',
     ) as HTMLInputElement;
     const intermediateChip = document.getElementById(
-      'intermediate_chip'
+      'intermediate_chip',
     ) as HTMLInputElement;
     const customChip = document.getElementById(
-      'custom_chip'
+      'custom_chip',
     ) as HTMLInputElement;
 
     const widthElement = document.getElementById('width') as HTMLInputElement;
     const heightElement = document.getElementById('height') as HTMLInputElement;
     const mineCountElement = document.getElementById(
-      'mine_count'
+      'mine_count',
     ) as HTMLInputElement;
 
     function updateDimensions(
       width: string,
       height: string,
-      mineCount: string
+      mineCount: string,
     ): boolean {
       let changed = false;
       if (widthElement.value !== width) {
@@ -84,15 +84,15 @@ if (win) {
         } else {
           customChip.checked = true;
         }
-      })
+      }),
     );
 
     const body = document.getElementsByTagName('body')[0];
     const systemColor = document.getElementById(
-      'system_color'
+      'system_color',
     ) as HTMLInputElement;
     const lightColor = document.getElementById(
-      'light_color'
+      'light_color',
     ) as HTMLInputElement;
     const darkColor = document.getElementById('dark_color') as HTMLInputElement;
 
@@ -113,13 +113,13 @@ if (win) {
     });
 
     const noMineElement = document.getElementById(
-      'no_mine'
+      'no_mine',
     ) as HTMLInputElement;
     const openAreaElement = document.getElementById(
-      'open_area'
+      'open_area',
     ) as HTMLInputElement;
     const minePossibleElement = document.getElementById(
-      'mine_possible'
+      'mine_possible',
     ) as HTMLInputElement;
 
     noMineElement.addEventListener('change', () => {
@@ -185,13 +185,13 @@ if (win) {
         updateDimensions(
           sidebarState.width ?? '30',
           sidebarState.height ?? '16',
-          sidebarState.mineCount ?? '99'
+          sidebarState.mineCount ?? '99',
         );
       }
     }
 
     const settings = JSON.parse(
-      localStorage?.getItem('settings') ?? 'null'
+      localStorage?.getItem('settings') ?? 'null',
     ) as SidebarState | null;
     if (settings) {
       setSettings(settings);

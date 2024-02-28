@@ -154,7 +154,7 @@ describe('Huffman', () => {
       const code = constructHuffmanCode(xorMapping).encode;
       // it encodes to its xor'ed value
       expect(encodeHuffman(bitset.toReader(), code)).toEqual(
-        new BitSetWriter().writeBatch(0b011001, 6).bitset
+        new BitSetWriter().writeBatch(0b011001, 6).bitset,
       );
     });
     it('encodes with four-key transform', () => {
@@ -165,7 +165,7 @@ describe('Huffman', () => {
       const code = constructHuffmanCode(fourMapping).encode;
       // it encodes the input
       expect(encodeHuffman(bitset.toReader(), code)).toEqual(
-        new BitSetWriter().writeBatch(0b00100110111, 11).bitset
+        new BitSetWriter().writeBatch(0b00100110111, 11).bitset,
       );
     });
   });
@@ -263,7 +263,7 @@ describe('Huffman', () => {
       const digits = testRandom.getRandomInteger(1000, 100);
       const bitset = new BitSetWriter().writeBigBits(
         testRandom.getRandomBigBits(BigInt(digits * bitCount)),
-        digits * bitCount
+        digits * bitCount,
       ).bitset;
       const encoded = encodeHuffman(bitset.toReader(), code.encode);
       const decoded = encodeHuffman(encoded.toReader(), code.decode);
@@ -273,12 +273,12 @@ describe('Huffman', () => {
         console.log(
           'Original: length: %d, value: %s',
           bitset.length,
-          bitset.toBigInt().toString(16)
+          bitset.toBigInt().toString(16),
         );
         console.log(
           'Decoded : length: %d, value: %s',
           decoded.length,
-          decoded.toBigInt().toString(16)
+          decoded.toBigInt().toString(16),
         );
         console.log('Symbols: %s', JSON.stringify(symbols));
         throw e;

@@ -151,7 +151,7 @@ describe('BitSet', () => {
 
         // check > 64 bits
         expect(bitSet.getBigBits(18, 85)).toBe(
-          0b10000000000000000000100000000000000000001000000000000000000010n
+          0b10000000000000000000100000000000000000001000000000000000000010n,
         );
       });
     });
@@ -323,7 +323,7 @@ describe('BitSet', () => {
             const end = start + testRandom.getRandomInteger(64);
             const bitsToUse = testRandom.getRandomInteger(
               end - start + 10,
-              Math.max(end - start - 10, 0)
+              Math.max(end - start - 10, 0),
             );
             let val = testRandom.getRandomBigBits(BigInt(bitsToUse));
             if (testRandom.getRandomBits(1) !== 0) {
@@ -338,7 +338,7 @@ describe('BitSet', () => {
                 'Error logs:\n%o\n\nactual: %s\ncalced: %s',
                 tests,
                 result.toString(16),
-                comp.toString(16)
+                comp.toString(16),
               );
               throw new Error('Found round trip failure. See logs');
             }
@@ -522,7 +522,7 @@ describe('BitSet', () => {
       expect(new BitSet().countBits()).toBe(0);
       expect(new BitSet(1).countBits()).toBe(1);
       expect(
-        new BitSet([0, 0xffffffff, 0b1001011010001, 0xcafebabe]).countBits()
+        new BitSet([0, 0xffffffff, 0b1001011010001, 0xcafebabe]).countBits(),
       ).toBe(60);
     });
   });
@@ -706,20 +706,20 @@ describe('BitSet Reader / Writer', () => {
 
         // grab the bits from 18 through 41 (exclusive)
         expect(bitset.toReader(18).readBigBits(23)).toBe(
-          0b01000000000000000000010n
+          0b01000000000000000000010n,
         );
         // grab the bits from 37 through 61 (exclusive) - crosses one buffer bits
         expect(bitset.toReader(38).readBigBits(23)).toBe(
-          0b01000000000000000000010n
+          0b01000000000000000000010n,
         );
         // allows requesting bits beyond size, and yields zeros
         expect(bitset.toReader(38).readBigBits(32)).toBe(
-          0b01000000000000000000010n
+          0b01000000000000000000010n,
         );
 
         // check > 64 bits
         expect(bitset.toReader(18).readBigBits(67)).toBe(
-          0b10000000000000000000100000000000000000001000000000000000000010n
+          0b10000000000000000000100000000000000000001000000000000000000010n,
         );
       });
     });
@@ -804,7 +804,7 @@ describe('BitSourceReader', () => {
   });
   it('reports negative one bitsremaining when not initialized', () => {
     const reader = new BitSourceReader(
-      [{ value: 0xcafebabe, bitCount: 32 }][Symbol.iterator]()
+      [{ value: 0xcafebabe, bitCount: 32 }][Symbol.iterator](),
     );
     expect(reader.count()).toBe(-1);
     reader.readBatch();
@@ -818,7 +818,7 @@ describe('BitSourceReader', () => {
         { value: 0xbabe, bitCount: 16 },
         { value: 0xdeadbeef, bitCount: 32 },
       ],
-      64
+      64,
     );
     expect(reader.count()).toBe(64);
     reader.readBatch();
@@ -892,7 +892,7 @@ describe('concatenateReaders', () => {
         getReader(0n, 0),
         getReader(0n, 0),
         getReader(0n, 0),
-      ]).isClosed()
+      ]).isClosed(),
     ).toBeTrue();
   });
   it('reads single bits', () => {

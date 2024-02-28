@@ -39,7 +39,7 @@ export enum OpenState {
 }
 
 export function assertBoardInfo(
-  boardInfo?: unknown
+  boardInfo?: unknown,
 ): asserts boardInfo is KnownBoardInfo {
   const info = boardInfo as Partial<KnownBoardInfo>;
   assert(
@@ -48,7 +48,7 @@ export function assertBoardInfo(
       typeof info.height === 'number' &&
       typeof info.width === 'number' &&
       Array.isArray(info.cellData),
-    'Invalid Board Info: ' + JSON.stringify(boardInfo)
+    'Invalid Board Info: ' + JSON.stringify(boardInfo),
   );
 }
 
@@ -82,14 +82,14 @@ class DimensionCoder implements ArithmeticValueCoder<Dimension> {
       // from the height
       DimensionCoder.valueCoder.encodeValue(
         DeltaCoder.encode(width, height, 1),
-        encoder
+        encoder,
       );
     }
     if (elapsedTime) {
       encoder.encodeBit(0.5, 1);
       DimensionCoder.timeElapsedCoder.encodeValue(
         Math.trunc(elapsedTime / 500),
-        encoder
+        encoder,
       );
     } else {
       encoder.encodeBit(0.5, 0);
@@ -119,7 +119,7 @@ class DimensionCoder implements ArithmeticValueCoder<Dimension> {
       width = DeltaCoder.decode(
         DimensionCoder.valueCoder.decodeValue(decoder),
         height,
-        1
+        1,
       );
     }
     let elapsedTime = 0;
@@ -138,7 +138,7 @@ class MineCountCoder implements ArithmeticValueCoder<number> {
 
   constructor(
     private readonly width: number,
-    private readonly height: number
+    private readonly height: number,
   ) {
     if (this.width === 30 && this.height === 16) {
       this.standardBoardSize = true;
@@ -159,7 +159,7 @@ class MineCountCoder implements ArithmeticValueCoder<number> {
     // mine count
     const baseBits = Math.max(
       32 - Math.clz32((this.width * this.height) / 20),
-      1
+      1,
     );
     this.customCoder = new BitExtendedCoder(baseBits);
   }
@@ -179,7 +179,7 @@ class MineCountCoder implements ArithmeticValueCoder<number> {
 
     this.customCoder.encodeValue(
       DeltaCoder.encode(mineCount, this.expectedMineCount),
-      encoder
+      encoder,
     );
   }
   decodeValue(decoder: ArithmeticDecoder): number {
@@ -190,7 +190,7 @@ class MineCountCoder implements ArithmeticValueCoder<number> {
     }
     return DeltaCoder.decode(
       this.customCoder.decodeValue(decoder),
-      this.expectedMineCount
+      this.expectedMineCount,
     );
   }
 }
@@ -214,7 +214,7 @@ class MineMapCoder implements ArithmeticValueCoder<BitSet> {
     this.mineCountCoder.encodeValue(mineCount, encoder);
     new CountCoder(this.cellCount, this.cellCount - mineCount).encode(
       minemap.toReader(),
-      encoder
+      encoder,
     );
   }
 
@@ -222,7 +222,7 @@ class MineMapCoder implements ArithmeticValueCoder<BitSet> {
     const mineCount = this.mineCountCoder.decodeValue(decoder);
     const mineMapCoder = new CountCoder(
       this.cellCount,
-      this.cellCount - mineCount
+      this.cellCount - mineCount,
     );
     const minemap = new BitSet();
     mineMapCoder.decode(decoder, minemap.toWriter());
@@ -242,14 +242,14 @@ class MineTallyCoder implements ArithmeticValueCoder<MineTally> {
   constructor(
     private readonly width: number,
     private readonly height: number,
-    private readonly mineField: MineField
+    private readonly mineField: MineField,
   ) {
     this.cellCount = width * height;
 
     // Use a fixed-size number coder for the open count
     this.openCountCoder = new NumberCoder(this.cellCount + 1);
     this.flagCountCoder = new BitExtendedCoder(
-      Math.max(32 - Math.clz32(this.mineField.mineCount) - 1, 1)
+      Math.max(32 - Math.clz32(this.mineField.mineCount) - 1, 1),
     );
     this.openMineCountCoder =
       this.wrongFlagCountCoder =
@@ -264,7 +264,7 @@ class MineTallyCoder implements ArithmeticValueCoder<MineTally> {
     this.wrongFlagCountCoder.encodeValue(tally.wrongFlags + 1, encoder);
     this.closedInOpenGroupCoder.encodeValue(
       tally.closedInOpenGroup + 1,
-      encoder
+      encoder,
     );
   }
 
@@ -294,7 +294,7 @@ class OpenStateCoder implements ArithmeticValueCoder<OpenState[]> {
   constructor(
     private readonly width: number,
     private readonly height: number,
-    private readonly mineField: MineField
+    private readonly mineField: MineField,
   ) {
     this.tallyCoder = new MineTallyCoder(width, height, mineField);
   }
@@ -343,7 +343,7 @@ class OpenStateCoder implements ArithmeticValueCoder<OpenState[]> {
           isMine,
           isInOpenGroup,
           tally,
-          flagRatio
+          flagRatio,
         );
         const cellState = cells[i] ?? OpenState.CLOSED;
 
@@ -407,7 +407,7 @@ class OpenStateCoder implements ArithmeticValueCoder<OpenState[]> {
           isMine,
           isInOpenGroup,
           tally,
-          flagRatio
+          flagRatio,
         );
         const cellState = decodeOpenState(pOpen, pFlag, decoder);
         cells.push(cellState);
@@ -427,7 +427,7 @@ class OpenStateCoder implements ArithmeticValueCoder<OpenState[]> {
     x: number,
     y: number,
     dx: number,
-    dy: number
+    dy: number,
   ): KnownCell | undefined {
     const nx = x + dx;
     const ny = y + dy;
@@ -456,13 +456,13 @@ export class MineBoardCoder implements ArithmeticValueCoder<KnownBoardInfo> {
     const mineField = MineField.createMineFieldWithMineMap(
       width,
       height,
-      [...minemap].map(b => !!b)
+      [...minemap].map(b => !!b),
     );
     MineBoardCoder.dimensionCoder.encodeValue(board, encoder);
     new MineMapCoder(width, height).encodeValue(minemap, encoder);
     new OpenStateCoder(width, height, mineField).encodeValue(
       openState,
-      encoder
+      encoder,
     );
   }
 
@@ -473,10 +473,10 @@ export class MineBoardCoder implements ArithmeticValueCoder<KnownBoardInfo> {
     const mineField = MineField.createMineFieldWithMineMap(
       width,
       height,
-      [...minemap].map(b => !!b)
+      [...minemap].map(b => !!b),
     );
     const openState = new OpenStateCoder(width, height, mineField).decodeValue(
-      decoder
+      decoder,
     );
 
     return {
@@ -520,7 +520,7 @@ function encodeOpenState(
   state: OpenState,
   pOpen: number,
   pFlag: number,
-  encoder: ArithmeticEncoder
+  encoder: ArithmeticEncoder,
 ) {
   const isClosed = state === OpenState.CLOSED;
   // closed:   0b0
@@ -530,14 +530,14 @@ function encodeOpenState(
   if (!isClosed) {
     encoder.encodeBit(
       pOpen / (pOpen + pFlag),
-      state === OpenState.FLAGGED ? 1 : 0
+      state === OpenState.FLAGGED ? 1 : 0,
     );
   }
 }
 function decodeOpenState(
   pOpen: number,
   pFlag: number,
-  decoder: ArithmeticDecoder
+  decoder: ArithmeticDecoder,
 ): OpenState {
   const isClosed = !decoder.decodeBit(Math.max(1.0 - pOpen - pFlag, 0.0));
   if (isClosed) {
@@ -591,7 +591,7 @@ function generateTally(
   width: number,
   height: number,
   mineField: MineField,
-  openState: OpenState[]
+  openState: OpenState[],
 ): MineTally {
   const tally: MineTally = {
     flags: 0,
@@ -625,7 +625,7 @@ function updateTally(
   isMine: boolean,
   openState: OpenState,
   isOpenGroup: boolean,
-  count: number
+  count: number,
 ) {
   const isFlag = openState === OpenState.FLAGGED;
   const isOpen = openState === OpenState.OPENED;
@@ -652,7 +652,7 @@ function pOpenState(
   isMine: boolean,
   isInOpenGroup: boolean,
   tally: MineTally,
-  flagRatio: number
+  flagRatio: number,
 ): { pOpen: number; pFlag: number } {
   trace('[pOpenState] %o', {
     neighbors,

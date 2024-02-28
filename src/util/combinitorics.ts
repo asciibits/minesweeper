@@ -65,7 +65,7 @@ export function lexicalOrdering(val: bigint, n: number): bigint {
 export function bitmapFromLexicalOrdering(
   lexical: bigint,
   n: number,
-  k: number
+  k: number,
 ): bigint {
   let choices = combinations(n, k);
   assert(lexical >= 0n && lexical < choices, 'BoardNumber out of range');

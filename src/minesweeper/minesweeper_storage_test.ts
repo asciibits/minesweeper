@@ -24,7 +24,7 @@ describe('Minesweeper Storage', () => {
         const mineField = MineField.createRandomMineField(
           width,
           height,
-          mineCount
+          mineCount,
         );
 
         const cellData: KnownCell[] = [];
@@ -92,14 +92,14 @@ describe('Minesweeper Storage', () => {
           }
         }
         const mineCount = testRandom.getRandomInteger(
-          cellCount + 1 - reserved.size
+          cellCount + 1 - reserved.size,
         );
 
         const mineField = MineField.createRandomMineField(
           width,
           height,
           mineCount,
-          [...reserved]
+          [...reserved],
         );
         const board = new MineBoard(mineField);
         const unprocessed = new Set<Cell>();

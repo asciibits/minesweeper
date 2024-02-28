@@ -8,7 +8,7 @@ export interface ResizableArrayBufferConstructor
   readonly prototype: ResizableArrayBuffer;
   new (
     byteLength: number,
-    options: { maxByteLength: number }
+    options: { maxByteLength: number },
   ): ResizableArrayBuffer;
   new (byteLength: number): ResizableArrayBuffer;
 }

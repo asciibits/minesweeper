@@ -53,7 +53,7 @@ describe('MineField', () => {
           new MineField(4, 3, [
             { x: 1, y: 2 },
             { x: 1, y: 2 },
-          ])
+          ]),
       ).toThrow();
     });
   });
@@ -129,8 +129,8 @@ describe('MineField', () => {
           field.width,
           field.height,
           field.mineCount,
-          field.getBoardNumber()
-        ).toString()
+          field.getBoardNumber(),
+        ).toString(),
       ).toBe(field.toString());
     });
   });
@@ -161,7 +161,7 @@ describe('MineField', () => {
         3,
         2,
         { x: 2, y: 1 },
-        OpeningRestrictions.ZERO
+        OpeningRestrictions.ZERO,
       );
       expect(field.getCellValue(2, 1)).toBe(0);
 

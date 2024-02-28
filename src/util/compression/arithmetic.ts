@@ -175,7 +175,7 @@ export function encodeToWriter(
   input: BitReader,
   coder: ArithmeticCoder,
   writer: BitWriter,
-  options?: { terminateStream?: boolean; count?: number }
+  options?: { terminateStream?: boolean; count?: number },
 ): void {
   const terminateStream = options?.terminateStream ?? true;
   const count = options?.count ?? 1;
@@ -191,18 +191,18 @@ export function encodeToBitSet(
   input: BitReader,
   coder: ArithmeticCoder,
   output?: BitSetWriter,
-  count?: number
+  count?: number,
 ): BitSet;
 export function encodeToBitSet(
   input: BitReader,
   coder: ArithmeticCoder,
-  count: number
+  count: number,
 ): BitSet;
 export function encodeToBitSet(
   input: BitReader,
   coder: ArithmeticCoder,
   outputOrCount?: BitSetWriter | number,
-  count?: number
+  count?: number,
 ): BitSet {
   let writer: BitSetWriter;
   let terminateStream = false;
@@ -224,7 +224,7 @@ export function encodeValueToWriter<V>(
   value: V | V[],
   coder: ArithmeticValueCoder<V>,
   writer: BitWriter,
-  terminateStream = true
+  terminateStream = true,
 ): void {
   value = Array.isArray(value) ? value : [value];
   const encoder = Arithmetic.encoder(writer);
@@ -238,7 +238,7 @@ export function encodeValueToWriter<V>(
 export function encodeValueToBitSet<V>(
   value: V | V[],
   coder: ArithmeticValueCoder<V>,
-  output?: BitSetWriter
+  output?: BitSetWriter,
 ): BitSet {
   const bitset = output ? output.bitset : new BitSet();
   const writer = output ?? bitset.toWriter();
@@ -255,7 +255,7 @@ export function decodeToWriter(
   encoded: BitReader,
   coder: ArithmeticCoder,
   writer: BitWriter,
-  options?: { count?: number; padStream?: boolean }
+  options?: { count?: number; padStream?: boolean },
 ): void {
   const count = options?.count ?? 1;
   const padStream = options?.padStream ?? false;
@@ -271,18 +271,18 @@ export function decodeToBitSet(
   encoded: BitReader,
   coder: ArithmeticCoder,
   output?: BitSetWriter,
-  count?: number
+  count?: number,
 ): BitSet;
 export function decodeToBitSet(
   encoded: BitReader,
   coder: ArithmeticCoder,
-  count: number
+  count: number,
 ): BitSet;
 export function decodeToBitSet(
   encoded: BitReader,
   coder: ArithmeticCoder,
   outputOrCount?: BitSetWriter | number,
-  count?: number
+  count?: number,
 ): BitSet {
   let writer: BitSetWriter;
   let padStream = true;
@@ -302,7 +302,7 @@ export function decodeToBitSet(
 export function decodeValue<V>(
   encoded: BitReader,
   coder: ArithmeticValueCoder<V>,
-  padStream = true
+  padStream = true,
 ): V {
   const decoder = Arithmetic.decoder(encoded, padStream);
   const value = coder.decodeValue(decoder);
@@ -314,7 +314,7 @@ export function decodeValues<V>(
   encoded: BitReader,
   coder: ArithmeticValueCoder<V>,
   count: number,
-  padStream = true
+  padStream = true,
 ): V[] {
   const result: V[] = [];
   const decoder = Arithmetic.decoder(encoded, padStream);
@@ -332,7 +332,7 @@ export function decodeValues<V>(
 export class FixedProbabilityArithmeticCoder implements ArithmeticCoder {
   constructor(
     private readonly p: number,
-    private readonly bitCount = -1
+    private readonly bitCount = -1,
   ) {
     assert(p >= 0 && p <= 1, 'Probability must be between zero and one');
   }
@@ -367,13 +367,13 @@ export class CountCoder implements ArithmeticCoder {
    */
   constructor(
     private readonly n: number,
-    private readonly z: number
+    private readonly z: number,
   ) {
     assert(n >= 0);
     assert(z >= 0 && z <= n);
     assert(
       Math.trunc(n) === n && Math.trunc(z) === z,
-      'n and z must be integers'
+      'n and z must be integers',
     );
   }
 
@@ -408,7 +408,7 @@ export class NumberCoder implements ArithmeticValueCoder<number> {
 
   constructor(
     max: number,
-    private readonly min = 0
+    private readonly min = 0,
   ) {
     assert(max > min);
     // normalize max to be relative to min, and inclusive
@@ -492,7 +492,7 @@ export class BitExtendedCoder
    */
   constructor(
     private readonly payloadBits: number,
-    p = 0.5
+    p = 0.5,
   ) {
     this.p = 1 - p;
   }
@@ -522,14 +522,14 @@ export class BitExtendedCoder
   encodeValue(value: number, encoder: ArithmeticEncoder): void {
     this.encode(
       new BitSetWriter().writeBatch(value).bitset.trim().toReader(),
-      encoder
+      encoder,
     );
   }
 
   encodeBigInt(value: bigint, encoder: ArithmeticEncoder): void {
     this.encode(
       new BitSetWriter().writeBigBits(value).bitset.trim().toReader(),
-      encoder
+      encoder,
     );
   }
 
@@ -558,7 +558,7 @@ export class BitExtendedCoder
     this.decode(decoder, output.toWriter());
     assert(
       output.trim().length <= 32,
-      'Value too large for a number. Use decodeBigInt'
+      'Value too large for a number. Use decodeBigInt',
     );
     return output.getBits(0);
   }
@@ -589,7 +589,7 @@ export class BitExtendedCoder
  */
 function boundedEncoder(
   encoder: ArithmeticEncoder,
-  bitCount?: number
+  bitCount?: number,
 ): ArithmeticEncoder {
   if (bitCount === undefined || bitCount < 0) {
     // no bounds - just use the existing encoder
@@ -619,7 +619,7 @@ function boundedEncoder(
  */
 function boundedDecoder(
   decoder: ArithmeticDecoder,
-  bitCount?: number
+  bitCount?: number,
 ): ArithmeticDecoder {
   if (bitCount === undefined || bitCount < 0) {
     // no bounds - just use the existing encoder
@@ -708,7 +708,7 @@ class ArithmeticDecoderImpl implements ArithmeticDecoder {
 
   constructor(
     private readonly input: BitReader,
-    private readonly padStream = false
+    private readonly padStream = false,
   ) {}
 
   decodeBit(p: number): Bit {
@@ -811,7 +811,7 @@ class ArithmeticEncoderImpl implements ArithmeticEncoder {
       low: number;
       pendingBits: number;
       trailingZeros: number;
-    }
+    },
   ) {
     if (state) {
       this.closed = state.closed;
@@ -851,7 +851,7 @@ class ArithmeticEncoderImpl implements ArithmeticEncoder {
     if (b) {
       assert(
         mid < this.high,
-        '[Arithmetic.encode] Invalid p == 1 with b === 1'
+        '[Arithmetic.encode] Invalid p == 1 with b === 1',
       );
       this.low = mid;
     } else {
@@ -995,7 +995,7 @@ function calcMid(low: number, high: number, p: number, debug: string): number {
       return p < 1.0 ? high - Number.EPSILON : high;
     } else {
       throw new Error(
-        `[Arithmetic.${debug}] Invalid probablility from model: ${p}`
+        `[Arithmetic.${debug}] Invalid probablility from model: ${p}`,
       );
     }
   }
@@ -1005,7 +1005,7 @@ function calcMid(low: number, high: number, p: number, debug: string): number {
       return p > 0.0 ? low + Number.EPSILON : low;
     } else {
       throw new Error(
-        `[Arithmetic.${debug}] Invalid probablility from model: ${p}`
+        `[Arithmetic.${debug}] Invalid probablility from model: ${p}`,
       );
     }
   }
@@ -1049,14 +1049,14 @@ function generateModelTree(symbols: ArithmeticSymbol[]): Node {
         'Common prefix: ' +
           item.value.getBigBits(0, i).toString(2) +
           ' is a prefix for ' +
-          item.value.toBigInt().toString(2)
+          item.value.toBigInt().toString(2),
       );
       node = child;
     }
     assert(
       !node.weights[0] && !node.weights[0],
       'Indexing item is a prefix of one or more other items: ' +
-        item.value.toBigInt().toString(2)
+        item.value.toBigInt().toString(2),
     );
     node.isLeaf = true;
   }

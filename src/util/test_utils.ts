@@ -1,7 +1,7 @@
 import { BitSet, BitSetWriter, BitReader } from './io.js';
 
 export function cleanState<T extends Record<string, unknown>>(
-  init: () => T
+  init: () => T,
 ): T {
   const state = {} as unknown as T;
   beforeEach(() => {
@@ -20,16 +20,16 @@ export function cleanState<T extends Record<string, unknown>>(
 export function bitset(
   digits: number[],
   bitsPerDigit: number,
-  bitCount?: number
+  bitCount?: number,
 ): BitSet;
 export function bitset(
   source: BitReader | number | bigint,
-  bitCount?: number
+  bitCount?: number,
 ): BitSet;
 export function bitset(
   source: BitReader | number | bigint | number[],
   bitsOrBitCount?: number,
-  bitCount?: number
+  bitCount?: number,
 ): BitSet {
   let bitset: BitSet;
   if (Array.isArray(source)) {

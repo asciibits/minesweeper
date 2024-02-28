@@ -29,17 +29,17 @@ export function initUi(window: Window) {
 
     widthElement = window.document.getElementById('width') as HTMLInputElement;
     heightElement = window.document.getElementById(
-      'height'
+      'height',
     ) as HTMLInputElement;
     mineCountElement = window.document.getElementById(
-      'mine_count'
+      'mine_count',
     ) as HTMLInputElement;
     const sideBar = window.document.getElementById(
-      'sidebar'
+      'sidebar',
     ) as HTMLFieldSetElement;
 
     openingConfigElements = Array.from(
-      sideBar.querySelectorAll('[name=initial_click]')
+      sideBar.querySelectorAll('[name=initial_click]'),
     ).filter((e): e is HTMLInputElement => e instanceof HTMLInputElement);
 
     mineFieldBoard = window.document.getElementById('minefield') as HTMLElement;
@@ -97,8 +97,8 @@ export function initUi(window: Window) {
 
     const minesRemainingDisplay = new DigitalDisplay(
       [1, 2, 3].map(i =>
-        window.document.getElementById('mines_remaining_' + i)
-      ) as HTMLElement[]
+        window.document.getElementById('mines_remaining_' + i),
+      ) as HTMLElement[],
     );
 
     function updateMinesRemaining() {
@@ -107,8 +107,8 @@ export function initUi(window: Window) {
 
     const timerDisplay = new DigitalDisplay(
       [1, 2, 3].map(i =>
-        window.document.getElementById('timer_' + i)
-      ) as HTMLElement[]
+        window.document.getElementById('timer_' + i),
+      ) as HTMLElement[],
     );
     function updateTimer() {
       timerDisplay.setValue(board.getTimeElapsed() / 1000);
@@ -180,7 +180,7 @@ export function initUi(window: Window) {
           openingConfigElements
             .filter(
               e =>
-                e.value === OpeningRestrictions[getBoardConfig().openingConfig]
+                e.value === OpeningRestrictions[getBoardConfig().openingConfig],
             )
             .forEach(e => (e.checked = true));
           if (!e.attributes?.['DECODING']) {
@@ -275,7 +275,7 @@ export function initUi(window: Window) {
 function createBoard(
   uiContainer: HTMLElement,
   board: MineBoard,
-  analyzer?: SimpleAnalyzer
+  analyzer?: SimpleAnalyzer,
 ): string {
   // reset container
   uiContainer.innerHTML = '';

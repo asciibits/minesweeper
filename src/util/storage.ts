@@ -39,7 +39,7 @@ export interface Coder<
 export function encodeToBitset<T>(
   input: T,
   coder: Coder<T>,
-  bitset = new BitSet()
+  bitset = new BitSet(),
 ): BitSet {
   coder.encode(input, bitset.toWriter());
   return bitset;
@@ -55,7 +55,7 @@ export class VariableLengthQuantityCoder implements Coder<number> {
   constructor(readonly payloadBits: number) {
     assert(
       payloadBits > 0 && payloadBits < 32,
-      'Payload bits must be > 0 and < 32'
+      'Payload bits must be > 0 and < 32',
     );
   }
 
@@ -84,7 +84,7 @@ export class VariableLengthQuantityCoder implements Coder<number> {
     const output = this.decodeBitSet(input);
     assert(
       output.length <= 32,
-      "Value too large, can't decode to number. Use the bigint version"
+      "Value too large, can't decode to number. Use the bigint version",
     );
     return output.getBits(0);
   }
@@ -134,7 +134,7 @@ export class BitExtendedCoder implements Coder<number> {
   constructor(readonly payloadBits: number) {
     assert(
       payloadBits >= 0 && payloadBits < 32,
-      'Payload bits must be >= 0 and < 32'
+      'Payload bits must be >= 0 and < 32',
     );
   }
 
@@ -176,7 +176,7 @@ export class BitExtendedCoder implements Coder<number> {
     const decoded = this.decodeBitSet(encoded);
     assert(
       decoded.length <= 32,
-      "Value too large, can't decode to number. Use the bigint version"
+      "Value too large, can't decode to number. Use the bigint version",
     );
     return decoded.getBits(0);
   }
@@ -260,7 +260,7 @@ export const InterleaveCoder = {
 export class DeltaCoder {
   constructor(
     readonly base: number,
-    readonly min = 0
+    readonly min = 0,
   ) {
     assert(min <= base);
   }
@@ -294,7 +294,7 @@ export class DeltaCoder {
 export function encodeGrid(
   input: BitSet,
   width: number,
-  output?: BitSet
+  output?: BitSet,
 ): BitSet {
   output = output ?? new BitSet();
   const outputBitSet = output;

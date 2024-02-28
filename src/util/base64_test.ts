@@ -83,7 +83,7 @@ describe('Base64 Encoding', () => {
       expect(decode('_____D')).toEqual(bitset(0xffffffffn, 36));
       expect(decode('______')).toEqual(bitset(0xfffffffffn));
       expect(decode('sb-rZD9hC3kbsdvC')).toEqual(
-        bitset(3393966825983452340611442412n, 96)
+        bitset(3393966825983452340611442412n, 96),
       );
     });
   });

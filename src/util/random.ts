@@ -42,13 +42,13 @@ export class Random {
   private workingBits = 0;
   private availableBits = 0;
   constructor(
-    private readonly bitSource: BitSource = new CryptoRandomBitSource()
+    private readonly bitSource: BitSource = new CryptoRandomBitSource(),
   ) {}
 
   getRandomBits(bitCount: number): number {
     assert(
       bitCount >= 0 && bitCount <= 32,
-      'Random bits must be between 0 and 32'
+      'Random bits must be between 0 and 32',
     );
     if (bitCount === 32) {
       // short-circuit the 32-bit request for both efficiency, and to elimintate
@@ -135,7 +135,7 @@ export class Random {
 export function choose<T>(
   items: T[],
   count = items.length,
-  rand = random
+  rand = random,
 ): T[] {
   for (let i = 0; i < count; i++) {
     const swapIdx = rand.getRandomInteger(items.length, i);

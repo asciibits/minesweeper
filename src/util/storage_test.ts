@@ -14,13 +14,13 @@ describe('Storage', () => {
   describe('Variable Length Coder', () => {
     function encodeContinuous(
       val: number | bigint,
-      infoBitCount: number
+      infoBitCount: number,
     ): BitSet {
       return typeof val === 'number'
         ? encodeToBitset(val, new VariableLengthQuantityCoder(infoBitCount))
         : encodeToBitset(
             val,
-            new VariableLengthQuantityCoder(infoBitCount).bigintCoder()
+            new VariableLengthQuantityCoder(infoBitCount).bigintCoder(),
           );
     }
 
@@ -56,7 +56,7 @@ describe('Storage', () => {
         // I didn't actually test this manually... it's here in case something
         // changes
         expect(encodeContinuous(0x34e5c427f7b4734d9800n, 5)).toEqual(
-          bitset(0x1b3cbca29ff7db1e74ee6820n, 96)
+          bitset(0x1b3cbca29ff7db1e74ee6820n, 96),
         );
       });
     });
@@ -69,13 +69,13 @@ describe('Storage', () => {
       });
       it('decodes values under 1024 with 2 characters', () => {
         expect(decodeContinuous(bitset(0b000001100000, 12).toReader(), 5)).toBe(
-          32
+          32,
         );
         expect(decodeContinuous(bitset(0b010110111101, 12).toReader(), 5)).toBe(
-          733
+          733,
         );
         expect(decodeContinuous(bitset(0b011111111111, 12).toReader(), 5)).toBe(
-          1023
+          1023,
         );
       });
       it('decodes a few large values', () => {
@@ -84,14 +84,14 @@ describe('Storage', () => {
         expect(
           decodeBigContinuous(
             bitset(0xe9b1f61a77c25bbbda9ef4dab934n, 114).toReader(),
-            5
-          )
+            5,
+          ),
         ).toBe(0x38d1e8537815dbb2774b2c94n);
         expect(
           decodeBigContinuous(
             bitset(0x1b3cbca29ff7db1e74ee6820n, 96).toReader(),
-            5
-          )
+            5,
+          ),
         ).toBe(0x34e5c427f7b4734d9800n);
       });
     });
@@ -146,11 +146,11 @@ describe('Storage', () => {
             'Round trip failed.\nBitcount: %d\nVal: 0x%s\ndecoded: 0x%s',
             bitCount,
             val.toString(16),
-            decoded.toString(16)
+            decoded.toString(16),
           );
           console.log('Encoded: %o', encoded);
           throw new Error(
-            'Round trip failed for continuous integer encoding. See logs'
+            'Round trip failed for continuous integer encoding. See logs',
           );
         }
       }
@@ -159,7 +159,7 @@ describe('Storage', () => {
   describe('Bit Extended', () => {
     function encodeBitExtended(
       val: number | bigint,
-      infoBitCount: number
+      infoBitCount: number,
     ): BitSet {
       return typeof val === 'number'
         ? encodeToBitset(val, new BitExtendedCoder(infoBitCount))
@@ -170,7 +170,7 @@ describe('Storage', () => {
     }
     function decodeBigBitExtended(
       input: BitReader,
-      infoBitCount: number
+      infoBitCount: number,
     ): bigint {
       return new BitExtendedCoder(infoBitCount).decodeBigInt(input);
     }
@@ -218,7 +218,7 @@ describe('Storage', () => {
       });
       it('encodes large values', () => {
         expect(encodeBitExtended(0b1001011010100101101011101010, 2)).toEqual(
-          bitset(0b001011101111101110111010111011111011101111111011101110n, 54)
+          bitset(0b001011101111101110111010111011111011101111111011101110n, 54),
         );
       });
     });
@@ -247,45 +247,45 @@ describe('Storage', () => {
         expect(decodeBitExtended(bitset(0b01010, 5).toReader(), 3)).toEqual(10);
         expect(decodeBitExtended(bitset(0b01111, 5).toReader(), 3)).toEqual(15);
         expect(decodeBitExtended(bitset(0b0011000, 7).toReader(), 3)).toEqual(
-          16
+          16,
         );
         expect(decodeBitExtended(bitset(0b0011111, 7).toReader(), 3)).toEqual(
-          23
+          23,
         );
         expect(decodeBitExtended(bitset(0b0111000, 7).toReader(), 3)).toEqual(
-          24
+          24,
         );
       });
       it('decodes bigint with bitcount 3', () => {
         expect(decodeBigBitExtended(bitset(0b0000, 4).toReader(), 3)).toEqual(
-          0n
+          0n,
         );
         expect(decodeBigBitExtended(bitset(0b0001, 4).toReader(), 3)).toEqual(
-          1n
+          1n,
         );
         expect(decodeBigBitExtended(bitset(0b0111, 4).toReader(), 3)).toEqual(
-          7n
+          7n,
         );
         expect(decodeBigBitExtended(bitset(0b01000, 5).toReader(), 3)).toEqual(
-          8n
+          8n,
         );
         expect(decodeBigBitExtended(bitset(0b01001, 5).toReader(), 3)).toEqual(
-          9n
+          9n,
         );
         expect(decodeBigBitExtended(bitset(0b01010, 5).toReader(), 3)).toEqual(
-          10n
+          10n,
         );
         expect(decodeBigBitExtended(bitset(0b01111, 5).toReader(), 3)).toEqual(
-          15n
+          15n,
         );
         expect(
-          decodeBigBitExtended(bitset(0b0011000, 7).toReader(), 3)
+          decodeBigBitExtended(bitset(0b0011000, 7).toReader(), 3),
         ).toEqual(16n);
         expect(
-          decodeBigBitExtended(bitset(0b0011111, 7).toReader(), 3)
+          decodeBigBitExtended(bitset(0b0011111, 7).toReader(), 3),
         ).toEqual(23n);
         expect(
-          decodeBigBitExtended(bitset(0b0111000, 7).toReader(), 3)
+          decodeBigBitExtended(bitset(0b0111000, 7).toReader(), 3),
         ).toEqual(24n);
       });
     });
@@ -332,7 +332,7 @@ describe('Storage', () => {
       const samples = 100;
       for (let i = 0; i < samples; i++) {
         const val = testRandom.getRandomBigBits(
-          testRandom.getRandomBigInteger(1000n, 1n)
+          testRandom.getRandomBigInteger(1000n, 1n),
         );
         const bitCount = testRandom.getRandomInteger(32);
         if (val === 0n && bitCount === 0) {
@@ -456,7 +456,7 @@ describe('encodeGrid', () => {
       .writeBatch(0b10101010, 8)
       .writeBatch(0b01010101, 8);
     expect(encodeGrid(input, 8).toBigInt()).toBe(
-      0b110101101011010110110110101101011010110110110101101011010110110110101101011010110111n
+      0b110101101011010110110110101101011010110110110101101011010110110110101101011010110111n,
     );
     input = new BitSet();
     input
