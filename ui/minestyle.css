@@ -132,6 +132,10 @@ body {
   user-select: none;
 }
 
+.board.blank {
+  visibility: hidden;
+}
+
 #header {
   grid-column: 1;
   grid-row: 1;

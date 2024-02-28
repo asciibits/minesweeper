@@ -43,6 +43,9 @@ export function initUi(window: Window) {
     ).filter((e): e is HTMLInputElement => e instanceof HTMLInputElement);
 
     mineFieldBoard = window.document.getElementById('minefield') as HTMLElement;
+    const boardWrapper = window.document.getElementById(
+      'minefield_board',
+    ) as HTMLElement;
 
     const resetButton = window.document.getElementById('reset') as HTMLElement;
     const resetHeader = window.document.getElementById('header') as HTMLElement;
@@ -186,6 +189,7 @@ export function initUi(window: Window) {
           if (!e.attributes?.['DECODING']) {
             updateBoardIdDisplay('');
           }
+          boardWrapper.classList.remove('blank');
           break;
         case BoardEventType.FIRST_MOVE:
           resetButton.innerText = '🤔';

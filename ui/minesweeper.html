@@ -126,7 +126,11 @@
       <input id="mine_possible" type="radio" name="initial_click" value="ANY" />
       <label class="chip" for="mine_possible">Possible Mine</label>
     </fieldset>
-    <div class="board border_out" oncontextmenu="return false">
+    <div
+      id="minefield_board"
+      class="board border_out blank"
+      oncontextmenu="return false"
+    >
       <div id="header" class="border_in">
         <div class="header_part left_justify">
           <div id="mines_remaining" class="digital_display border_in">
