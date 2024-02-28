@@ -1,5 +1,5 @@
 import {initSideBar} from './sidebar.js';
-import {initUi} from './ui.js';
+import {initUi} from './minesweeper_ui.js';
 
 /** @fileoverview The master export file */
 const win: Window | undefined =
