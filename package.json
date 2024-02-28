@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "tsc && node --no-warnings=ExperimentalWarning --loader ts-node/esm ./node_modules/jasmine/bin/jasmine.js --config=./spec/support/jasmine.json --seed=${RANDOM}",
+    "test": "tsc && npx tsx ./node_modules/jasmine/bin/jasmine.js --config=./spec/support/jasmine.json --seed=${RANDOM}",
     "build": "tsc",
     "clean": "rm -rf ./lib/* ./docs/*",
     "prettier-format": "prettier --config .prettierrc '**/*.ts' '**/*.html' '**/*.css' --write",
