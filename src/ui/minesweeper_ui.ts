@@ -285,7 +285,7 @@ export function initUi(window: Window) {
     const boardId = url.searchParams.get('board_id');
     if (boardId) {
       const viewState = url.searchParams.get('view_state') ?? undefined;
-      const elapsedTime = url.searchParams.get('ellapsed_time') ?? undefined;
+      const elapsedTime = url.searchParams.get('elapsed_time') ?? undefined;
       boardIdWorker.requestDecode({boardId, viewState, elapsedTime});
     } else {
       rebuildGame();

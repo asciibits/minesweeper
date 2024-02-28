@@ -188,8 +188,8 @@ export class BoardIdWorker {
     assert(!this.terminated, 'BoardIdWorker has been terminated');
     trace('[BoardIdWorker.addDecodeToBoardListener]');
     const listener: DecodeBoardIdListener = {
-      handleDecodeResponse: (boardInfo: KnownBoardState) => {
-        const mineField = getMineField(boardInfo);
+      handleDecodeResponse: (boardState: KnownBoardState) => {
+        const mineField = getMineField(boardState);
         // only reset the board if we have a new minefield. This optimization
         // prevents building up the entire board when only a part of it is
         // changing
@@ -198,10 +198,10 @@ export class BoardIdWorker {
           board.reset(mineField, {DECODING: true});
         }
         const openMines = new Set<Cell>();
-        for (let i = 0; i < boardInfo.cellData.length; i++) {
+        for (let i = 0; i < boardState.cellData.length; i++) {
           const cell = board.getCell(i);
           cell.setWrong(false, {DECODING: true});
-          switch (boardInfo.cellData[i].openState) {
+          switch (boardState.cellData[i].openState) {
             case OpenState.OPENED:
               if (cell.isMine()) {
                 openMines.add(cell);
@@ -223,8 +223,8 @@ export class BoardIdWorker {
         // have everything else properly rendered before showing the bomb
         // status)
         board.openGroup(openMines, {DECODING: true});
-        if (needsReset && boardInfo.elapsedTime) {
-          board.setTimeElapsed(boardInfo.elapsedTime, {DECODING: true});
+        if (needsReset && boardState.elapsedTime) {
+          board.setTimeElapsed(boardState.elapsedTime, {DECODING: true});
         }
         // force a TIME event for completed game
         if (board.isComplete() || board.isExploded()) {
