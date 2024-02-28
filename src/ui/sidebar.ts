@@ -1,6 +1,3 @@
-const win: Window | undefined =
-  typeof window === 'undefined' ? undefined : window;
-
 interface SidebarState {
   colorPalette?: 'SYSTEM' | 'LIGHT' | 'DARK';
   width?: string;
@@ -9,8 +6,8 @@ interface SidebarState {
   initialClick?: 'NO_MINE' | 'ZERO' | 'ANY';
 }
 
-if (win) {
-  win.addEventListener('load', () => {
+export function initSideBar(window: Window) {
+  window.addEventListener('load', () => {
     const expertChip = document.getElementById(
       'expert_chip',
     ) as HTMLInputElement;

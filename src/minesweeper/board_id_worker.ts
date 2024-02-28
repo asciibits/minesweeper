@@ -69,19 +69,8 @@ export class BoardIdWorker {
 
   constructor() {
     info('[BoardIdWorker] Starting Board ID worker');
-    let url: string;
-    if (
-      !inlinedWorkerCode.startsWith('<<') &&
-      !inlinedWorkerCode.endsWith('>>')
-    ) {
-      // dist mode - use the inlined worker code directly
-      const blob = new Blob([inlinedWorkerCode], {type: 'text/javascript'});
-      url = URL.createObjectURL(blob);
-    } else {
-      // deveoper mode - pull in the library directly
-      url = '../lib/ui/board_id_worker_entry.js';
-    }
-    this.worker = new Worker(url, {
+    // deveoper mode - pull in the library directly
+    this.worker = new Worker('../lib/ui/board_id_worker_entry.js', {
       type: 'module',
       name: 'BoardIdWorker',
     });
@@ -286,6 +275,3 @@ function getBoardInfo(board: MineBoard): KnownBoardInfo {
 
   return {width, height, elapsedTime, cellData};
 }
-
-/** This is populated when creating the 'dist' */
-const inlinedWorkerCode = '<<BOARD_ID_WORKER_ENTRY>>';

@@ -167,7 +167,13 @@ export class RandomBitSource implements BitSource {
   private readonly random: () => number;
   constructor(seed?: number) {
     seed = (seed ?? Date.now()) & 0xffffffff;
-    console.log('Using Test seed: %d', seed);
+    // only log this with node
+    if (typeof jasmine !== 'undefined') {
+      console.log('INSIDE JASMINE!');
+    }
+    if (typeof process === 'object') {
+      console.log('Using Test seed: %d', seed);
+    }
     this.random = getRandomFunction(seed);
   }
   next() {

@@ -1,13 +1,1 @@
-{
-  "configurations": [
-    {
-      "name": "Current TS File",
-      "type": "node",
-      "request": "launch",
-      "args": ["${relativeFile}"],
-      "runtimeArgs": ["--nolazy", "--no-warnings=ExperimentalWarning", "--loader", "ts-node/esm"],
-      "sourceMaps": true,
-      "cwd": "${workspaceRoot}",
-    }
-  ]
-}
+{}
