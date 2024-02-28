@@ -15,7 +15,6 @@
           type="radio"
           name="color_palette"
           value="SYSTEM"
-          checked
         />
         <div class="color_palette_wrapper">
           <label for="system_color" class="color_palette_item system_icon"
@@ -59,13 +58,7 @@
           </div>
         </span>
       </span>
-      <input
-        id="expert_chip"
-        type="radio"
-        name="board_size"
-        value="EXPERT"
-        checked
-      />
+      <input id="expert_chip" type="radio" name="board_size" value="EXPERT" />
       <label class="chip" for="expert_chip">Expert</label>
       <input
         id="intermediate_chip"
@@ -84,11 +77,11 @@
       <input id="custom_chip" type="radio" name="board_size" value="CUSTOM" />
       <label class="chip" for="custom_chip">Custom </label>
       <label for="width" class="bare">width</label>
-      <input id="width" type="number" min="1" value="30" />
+      <input id="width" type="number" min="1" />
       <label for="height" class="bare">height</label>
-      <input id="height" type="number" min="1" value="16" />
+      <input id="height" type="number" min="1" />
       <label for="mine_count" class="bare">mines</label>
-      <input id="mine_count" type="number" min="1" value="99" />
+      <input id="mine_count" type="number" min="1" />
       <span class="section">
         Initial click
         <span class="tooltip">
@@ -113,13 +106,7 @@
           </div>
         </span>
       </span>
-      <input
-        id="no_mine"
-        type="radio"
-        name="initial_click"
-        value="NO_MINE"
-        checked
-      />
+      <input id="no_mine" type="radio" name="initial_click" value="NO_MINE" />
       <label class="chip" for="no_mine">No Mine</label>
       <input id="open_area" type="radio" name="initial_click" value="ZERO" />
       <label class="chip" for="open_area">Open Area</label>

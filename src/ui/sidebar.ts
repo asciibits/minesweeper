@@ -45,6 +45,7 @@ export function initSideBar(window: Window) {
         changed = true;
         mineCountElement.value = mineCount;
       }
+      setBoardChip();
       saveState();
       return changed;
     }
@@ -66,21 +67,24 @@ export function initSideBar(window: Window) {
         widthElement.dispatchEvent(new Event('change'));
       }
     });
+    function setBoardChip() {
+      const width = widthElement.value;
+      const height = heightElement.value;
+      const mineCount = mineCountElement.value;
+
+      if (height === '16' && width === '30' && mineCount === '99') {
+        expertChip.checked = true;
+      } else if (height === '16' && width === '16' && mineCount === '40') {
+        intermediateChip.checked = true;
+      } else if (height === '9' && width === '9' && mineCount === '10') {
+        beginnerChip.checked = true;
+      } else {
+        customChip.checked = true;
+      }
+    }
     [widthElement, heightElement, mineCountElement].forEach(e =>
       e.addEventListener('change', () => {
-        const width = widthElement.value;
-        const height = heightElement.value;
-        const mineCount = mineCountElement.value;
-
-        if (height === '16' && width === '30' && mineCount === '99') {
-          expertChip.checked = true;
-        } else if (height === '16' && width === '16' && mineCount === '40') {
-          intermediateChip.checked = true;
-        } else if (height === '9' && width === '9' && mineCount === '10') {
-          beginnerChip.checked = true;
-        } else {
-          customChip.checked = true;
-        }
+        setBoardChip();
       }),
     );
 
@@ -146,54 +150,50 @@ export function initSideBar(window: Window) {
       return {colorPalette, width, height, mineCount, initialClick};
     }
 
-    function setSettings(sidebarState?: SidebarState) {
-      if (sidebarState) {
-        switch (sidebarState.colorPalette) {
-          case 'DARK':
-            if (!darkColor.checked) {
-              darkColor.checked = true;
-              darkColor.dispatchEvent(new Event('click'));
-            }
-            break;
-          case 'LIGHT':
-            if (!lightColor.checked) {
-              lightColor.checked = true;
-              lightColor.dispatchEvent(new Event('click'));
-            }
-            break;
-          case 'SYSTEM':
-            if (!systemColor.checked) {
-              systemColor.checked = true;
-              systemColor.dispatchEvent(new Event('click'));
-            }
-            break;
-        }
-        switch (sidebarState.initialClick) {
-          case 'NO_MINE':
-            noMineElement.checked = true;
-            break;
-          case 'ZERO':
-            openAreaElement.checked = true;
-            break;
-          case 'ANY':
-            minePossibleElement.checked = true;
-            break;
-        }
-        updateDimensions(
-          sidebarState.width ?? '30',
-          sidebarState.height ?? '16',
-          sidebarState.mineCount ?? '99',
-        );
+    function setSettings(sidebarState?: SidebarState | null) {
+      switch (sidebarState?.colorPalette) {
+        case 'DARK':
+          if (!darkColor.checked) {
+            darkColor.checked = true;
+            darkColor.dispatchEvent(new Event('click'));
+          }
+          break;
+        case 'LIGHT':
+          if (!lightColor.checked) {
+            lightColor.checked = true;
+            lightColor.dispatchEvent(new Event('click'));
+          }
+          break;
+        default: // 'SYSTEM'
+          if (!systemColor.checked) {
+            systemColor.checked = true;
+            systemColor.dispatchEvent(new Event('click'));
+          }
+          break;
       }
+      switch (sidebarState?.initialClick) {
+        case 'ZERO':
+          openAreaElement.checked = true;
+          break;
+        case 'ANY':
+          minePossibleElement.checked = true;
+          break;
+        default: // 'NO_MINE'
+          noMineElement.checked = true;
+          break;
+      }
+      updateDimensions(
+        sidebarState?.width ?? '30',
+        sidebarState?.height ?? '16',
+        sidebarState?.mineCount ?? '99',
+      );
     }
 
     const settings = JSON.parse(
       localStorage?.getItem('settings') ?? 'null',
     ) as SidebarState | null;
-    if (settings) {
-      setSettings(settings);
-      widthElement.dispatchEvent(new Event('change'));
-    }
+    setSettings(settings);
+
     function saveState() {
       const settings = JSON.stringify(getSettings());
       if (localStorage) {
