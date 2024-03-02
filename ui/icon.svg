@@ -10,13 +10,13 @@
       font-family: Minesweeper;
       font-size: 380px;
       text-anchor: middle;
-      alignment-baseline: middle;
+      dominant-baseline: middle;
       fill: black;
     }
     @media (prefers-color-scheme: dark) {
       text { fill: #dddddd; }
     }
   </style>
-  <!-- <rect x="0" y="0" width="100%" height="100%" stroke="red" fill-opacity="0" /> -->
+  <rect x="0" y="0" width="100%" height="100%" stroke="red" fill-opacity="0" />
   <text x="53.5%" y="53.5%" fill="black">*</text>
 </svg>

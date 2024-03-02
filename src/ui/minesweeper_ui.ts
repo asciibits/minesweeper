@@ -28,23 +28,24 @@ export function initUi(window: Window) {
     // setLoggingLevel(LoggingLevel.TRACE);
     boardIdWorker = new BoardIdWorker();
 
+    const boardMenu = window.document.getElementById(
+      'board_menu',
+    ) as HTMLFieldSetElement;
+
     widthElement = window.document.getElementById('width') as HTMLInputElement;
     heightElement = window.document.getElementById(
       'height',
     ) as HTMLInputElement;
     mineCountElement = window.document.getElementById(
-      'mine_count',
+      'mines',
     ) as HTMLInputElement;
-    const sideBar = window.document.getElementById(
-      'sidebar',
-    ) as HTMLFieldSetElement;
 
     openingConfigElements = Array.from(
-      sideBar.querySelectorAll('[name=initial_click]'),
+      boardMenu.querySelectorAll('[name=initial_click]'),
     ).filter((e): e is HTMLInputElement => e instanceof HTMLInputElement);
 
     mineFieldBoard = window.document.getElementById('minefield') as HTMLElement;
-    const boardWrapper = window.document.getElementById(
+    const minedfieldBoard = window.document.getElementById(
       'minefield_board',
     ) as HTMLElement;
 
@@ -132,7 +133,7 @@ export function initUi(window: Window) {
       timerDisplay.setValue(board.getTimeElapsed() / 1000);
     }
 
-    // rebuild the minefield UI
+    // The callback for any board events
     function boardListener(b: MineBoard, e: BoardEvent) {
       switch (e.type) {
         case BoardEventType.MINE_COUNT_CHANGED:
@@ -204,7 +205,7 @@ export function initUi(window: Window) {
           if (!e.attributes?.['DECODING']) {
             updateBoardIdDisplay();
           }
-          boardWrapper.classList.remove('blank');
+          minedfieldBoard.classList.remove('blank');
           break;
         case BoardEventType.FIRST_MOVE:
           resetButton.innerText = '🤔';
@@ -224,7 +225,7 @@ export function initUi(window: Window) {
         logError(e);
       }
     }
-    sideBar.addEventListener('change', e => {
+    boardMenu.addEventListener('change', e => {
       const element = e.target as HTMLElement;
       const name = element?.attributes.getNamedItem('name')?.value;
 
@@ -247,7 +248,13 @@ export function initUi(window: Window) {
       }
     });
 
+    resetButton.addEventListener('click', () => {
+      rebuildGame();
+    });
     const resetButtonListener = (e: MouseEvent) => {
+      if (e.defaultPrevented) return;
+      // don't reset if the click was on one of the timers
+      if (!(e.target as HTMLElement)?.classList.contains('header_part')) return;
       try {
         if (e.button !== 0) {
           // only care about left click
@@ -255,19 +262,28 @@ export function initUi(window: Window) {
         }
         switch (e.type) {
           case 'mousedown':
+            e.preventDefault();
             resetButton.classList.add('pressed');
             break;
           case 'mouseup':
-            resetButton.classList.remove('pressed');
-            rebuildGame();
+            // For touch screens, they never get the 'mousedown' event, so give
+            // them a chance to animate the button press
+            e.preventDefault();
+            resetButton.click();
+            resetButton.classList.add('pressed');
+            setTimeout(() => {
+              resetButton.classList.remove('pressed');
+            }, 0);
             break;
           case 'mouseenter':
             if (e.buttons === 1) {
+              e.preventDefault();
               resetButton.classList.add('pressed');
             }
             break;
           case 'mouseleave':
             if (e.buttons === 1) {
+              e.preventDefault();
               resetButton.classList.remove('pressed');
             }
             break;

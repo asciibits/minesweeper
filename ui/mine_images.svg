@@ -10,7 +10,7 @@
       font-family: Minesweeper;
       font-size: 1.2rem;
       text-anchor: middle;
-      alignment-baseline: middle;
+      dominant-baseline: middle;
     }
   </style>
   <defs>

@@ -1,4 +1,4 @@
-interface SidebarState {
+interface ConfigState {
   colorPalette?: 'SYSTEM' | 'LIGHT' | 'DARK';
   width?: string;
   height?: string;
@@ -6,25 +6,23 @@ interface SidebarState {
   initialClick?: 'NO_MINE' | 'ZERO' | 'ANY';
 }
 
-export function initSideBar(window: Window) {
+export function initMenus(window: Window) {
   window.addEventListener('load', () => {
-    const expertChip = document.getElementById(
-      'expert_chip',
+    const boardMenu = document.getElementById('board_menu') as HTMLInputElement;
+    const expertPreset = document.getElementById(
+      'expert_preset',
     ) as HTMLInputElement;
-    const beginnerChip = document.getElementById(
-      'beginner_chip',
+    const beginnerPreset = document.getElementById(
+      'beginner_preset',
     ) as HTMLInputElement;
-    const intermediateChip = document.getElementById(
-      'intermediate_chip',
-    ) as HTMLInputElement;
-    const customChip = document.getElementById(
-      'custom_chip',
+    const intermediatePreset = document.getElementById(
+      'intermediate_preset',
     ) as HTMLInputElement;
 
     const widthElement = document.getElementById('width') as HTMLInputElement;
     const heightElement = document.getElementById('height') as HTMLInputElement;
     const mineCountElement = document.getElementById(
-      'mine_count',
+      'mines',
     ) as HTMLInputElement;
 
     function updateDimensions(
@@ -45,46 +43,48 @@ export function initSideBar(window: Window) {
         changed = true;
         mineCountElement.value = mineCount;
       }
-      setBoardChip();
+      setPresetActive();
       saveState();
       return changed;
     }
-    expertChip.addEventListener('click', () => {
+    expertPreset.addEventListener('click', () => {
       if (updateDimensions('30', '16', '99')) {
         // pick one to change
-        widthElement.dispatchEvent(new Event('change'));
+        boardMenu.dispatchEvent(new Event('change'));
       }
     });
-    intermediateChip.addEventListener('click', () => {
+    intermediatePreset.addEventListener('click', () => {
       if (updateDimensions('16', '16', '40')) {
         // pick one to change
-        widthElement.dispatchEvent(new Event('change'));
+        boardMenu.dispatchEvent(new Event('change'));
       }
     });
-    beginnerChip.addEventListener('click', () => {
+    beginnerPreset.addEventListener('click', () => {
       if (updateDimensions('9', '9', '10')) {
         // pick one to change
-        widthElement.dispatchEvent(new Event('change'));
+        boardMenu.dispatchEvent(new Event('change'));
       }
     });
-    function setBoardChip() {
+    function setPresetActive() {
       const width = widthElement.value;
       const height = heightElement.value;
       const mineCount = mineCountElement.value;
 
+      let activeButton: HTMLElement | undefined = undefined;
       if (height === '16' && width === '30' && mineCount === '99') {
-        expertChip.checked = true;
+        activeButton = expertPreset;
       } else if (height === '16' && width === '16' && mineCount === '40') {
-        intermediateChip.checked = true;
+        activeButton = intermediatePreset;
       } else if (height === '9' && width === '9' && mineCount === '10') {
-        beginnerChip.checked = true;
-      } else {
-        customChip.checked = true;
+        activeButton = beginnerPreset;
       }
+      [expertPreset, intermediatePreset, beginnerPreset].forEach(e => {
+        e.classList.toggle('active', activeButton === e);
+      });
     }
     [widthElement, heightElement, mineCountElement].forEach(e =>
       e.addEventListener('change', () => {
-        setBoardChip();
+        setPresetActive();
       }),
     );
 
@@ -113,6 +113,23 @@ export function initSideBar(window: Window) {
       saveState();
     });
 
+    const menuPulldown = document.getElementById(
+      'board_menu_pulldown',
+    ) as HTMLInputElement;
+    menuPulldown.addEventListener('click', () => {
+      boardMenu.classList.toggle('active');
+    });
+    window.addEventListener('click', e => {
+      if (!boardMenu.contains(e.target as Node)) {
+        boardMenu.classList.remove('active');
+      }
+    });
+    boardMenu.addEventListener('keydown', e => {
+      if (e.code === 'Escape') {
+        boardMenu.classList.remove('active');
+      }
+    });
+
     const noMineElement = document.getElementById(
       'no_mine',
     ) as HTMLInputElement;
@@ -133,7 +150,7 @@ export function initSideBar(window: Window) {
       saveState();
     });
 
-    function getSettings(): SidebarState {
+    function getSettings(): ConfigState {
       const colorPalette = darkColor.checked
         ? 'DARK'
         : lightColor.checked
@@ -150,8 +167,8 @@ export function initSideBar(window: Window) {
       return {colorPalette, width, height, mineCount, initialClick};
     }
 
-    function setSettings(sidebarState?: SidebarState | null) {
-      switch (sidebarState?.colorPalette) {
+    function setSettings(configState?: ConfigState | null) {
+      switch (configState?.colorPalette) {
         case 'DARK':
           if (!darkColor.checked) {
             darkColor.checked = true;
@@ -171,7 +188,7 @@ export function initSideBar(window: Window) {
           }
           break;
       }
-      switch (sidebarState?.initialClick) {
+      switch (configState?.initialClick) {
         case 'ZERO':
           openAreaElement.checked = true;
           break;
@@ -183,15 +200,15 @@ export function initSideBar(window: Window) {
           break;
       }
       updateDimensions(
-        sidebarState?.width ?? '30',
-        sidebarState?.height ?? '16',
-        sidebarState?.mineCount ?? '99',
+        configState?.width ?? '30',
+        configState?.height ?? '16',
+        configState?.mineCount ?? '99',
       );
     }
 
     const settings = JSON.parse(
       localStorage?.getItem('settings') ?? 'null',
-    ) as SidebarState | null;
+    ) as ConfigState | null;
     setSettings(settings);
 
     function saveState() {
