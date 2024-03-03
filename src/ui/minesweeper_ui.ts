@@ -323,7 +323,7 @@ function createBoard(
   const uiListener = getMouseListener(board, analyzer);
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
-      const elem = document.createElement('div');
+      const elem = document.createElement('button');
       elem.classList.add('cell');
       elem.classList.add('closed');
       elem.style.setProperty('grid-row', String(y + 1));
@@ -346,7 +346,7 @@ function createBoard(
 
 function getCellListener(board: MineBoard) {
   return (cell: Cell, event: CellEvent) => {
-    const elem = cell.getAttribute('element') as HTMLElement;
+    const elem = cell.getAttribute('element') as HTMLButtonElement;
     if (!elem) {
       return;
     }
@@ -356,9 +356,11 @@ function getCellListener(board: MineBoard) {
         elem.classList.add('open');
         elem.classList.remove('pressed');
         if (cell.peek() < 0) {
+          elem.textContent = '*';
           elem.classList.add('mine');
         } else if (cell.peek() > 0) {
           if (!board.isExploded()) {
+            elem.textContent = cell.peek().toString();
             elem.classList.add('n' + cell.peek());
           }
         }
@@ -377,6 +379,7 @@ function getCellListener(board: MineBoard) {
         elem.classList.remove('n6');
         elem.classList.remove('n7');
         elem.classList.remove('n8');
+        elem.textContent = '';
         break;
       case CellEventType.RESET:
         for (const clz of Array.from(elem.classList)) {
@@ -389,8 +392,14 @@ function getCellListener(board: MineBoard) {
       case CellEventType.FLAG:
         if (cell.isFlagged()) {
           elem.classList.add('flagged');
+          if (!cell.isOpened()) {
+            elem.textContent = '`';
+          }
         } else {
           elem.classList.remove('flagged');
+          if (!cell.isOpened()) {
+            elem.textContent = '';
+          }
         }
         break;
       case CellEventType.WRONG:
