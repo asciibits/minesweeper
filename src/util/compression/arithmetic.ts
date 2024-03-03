@@ -654,21 +654,26 @@ function boundedDecoder(
   };
 }
 
+// To Keep everything below the 32-bit boundary (avoids dealing with sign
+// weirdness, and keeps it performant with V8 'smi' representation), this is
+// INCLUSIVE
+const MAX = 0x7fffffff;
+const THREE_QUARTER_31_BIT = 0x5fffffff;
+const HALF_31_BIT = 0x40000000;
+const QUARTER_31_BIT = 0x20000000;
+
 /**
  * Implementation class for ArithmeticDecoder.
  *
  * The implementation was inspired (and heavily assisted) by the guide at
  * https://marknelson.us/posts/2014/10/19/data-compression-with-arithmetic-coding.html
  *
- * We use floating point arithmetic rather than the integer stuff presented
- * there. The code is simpler, more efficient within JavaScript, and is
- * completely stable (i.e. no rounding error issues) as long as we continue
- * to keep the windows in the encoder and decoder consistent. To help with this,
- * the zoom window is kept between 1.0 and 2.0 (rather than the more obvious
- * 0.0 and 1.0). This is due to the IEEE 754 `binary64` encoding; all values
- * in the range [1.0, 2.0) use the same exponent, and have a consistent 52 bits
- * of information. This allows us to handle the zoom-in and mid-range
- * calculations without worrying about rounding errors.
+ * This implementation uses 31 bits for precision of the windowing values
+ * (min/max/mid), and a standard 64-bit float for the probability. This
+ * previously used 64-bit float everywhere, which worked very well until it was
+ * discovered to be platform dependent. Data encoded on one platform failed to
+ * decode on another. The integer math solves that problem nicely, though the
+ * code is more complex.
  *
  * There are some issues to consider when using this and its counterpart,
  * ArithmeticEncoderImpl to encode and decode a stream:
@@ -715,10 +720,10 @@ function boundedDecoder(
  */
 class ArithmeticDecoderImpl implements ArithmeticDecoder {
   private closed = false;
-  private high = 2.0;
-  private low = 1.0;
-  private value = 1.0;
-  private valueRange = 1.0;
+  private high = MAX;
+  private low = 0;
+  private value = 0;
+  private rangeMask = MAX;
 
   constructor(
     private readonly input: BitReader,
@@ -727,43 +732,50 @@ class ArithmeticDecoderImpl implements ArithmeticDecoder {
 
   decodeBit(p: number): Bit {
     assert(!this.closed, 'Stream closed');
-    while (this.high - this.low <= 0.25) {
+    if (p >= 1) {
+      assert(p === 1, `[Arithmetic.decode] Invalid p: ${p}`);
+      return 0;
+    } else if (p <= 0) {
+      assert(p === 0, `[Arithmetic.encode] Invalid p: ${p}`);
+      return 1;
+    }
+    while (this.high - this.low < QUARTER_31_BIT) {
       let zoom: string;
-      if (this.high <= 1.5) {
-        this.high = (this.high - 0.5) * 2.0;
-        this.value = (this.value - 0.5) * 2.0;
-        this.low = (this.low - 0.5) * 2.0;
+      if (this.high < HALF_31_BIT) {
+        this.high = (this.high << 1) | 1;
+        this.value <<= 1;
+        this.low <<= 1;
         zoom = 'low';
-      } else if (this.low >= 1.5) {
-        this.high = (this.high - 1.0) * 2.0;
-        this.value = (this.value - 1.0) * 2.0;
-        this.low = (this.low - 1.0) * 2.0;
+      } else if (this.low >= HALF_31_BIT) {
+        this.high = ((this.high << 1) & MAX) | 1;
+        this.value = (this.value << 1) & MAX;
+        this.low = (this.low << 1) & MAX;
         zoom = 'high';
       } else {
-        this.high = (this.high - 0.75) * 2.0;
-        this.value = (this.value - 0.75) * 2.0;
-        this.low = (this.low - 0.75) * 2.0;
+        this.high = ((this.high - QUARTER_31_BIT) << 1) | 1;
+        this.value = (this.value - QUARTER_31_BIT) << 1;
+        this.low = (this.low - QUARTER_31_BIT) << 1;
         zoom = 'mid';
       }
-      this.valueRange *= 2;
+      this.rangeMask = (this.rangeMask << 1) | 1;
       trace('[Arithmetic.decode] zooming %o', () => ({
         zoom,
         low: this.low,
         high: this.high,
         value: this.value,
-        valueRange: this.valueRange,
+        rangeBits: this.rangeMask,
       }));
     }
 
-    const mid = calcMid(this.low, this.high, p, 'decode');
+    const mid = this.low + 1 + Math.trunc(p * (this.high - this.low));
 
     const logData = () => {
       return {
         low: this.low,
-        mid,
+        mid: mid,
         high: this.high,
         value: this.value,
-        valueRange: this.valueRange,
+        rangeBits: this.rangeMask,
         p,
       };
     };
@@ -774,9 +786,9 @@ class ArithmeticDecoderImpl implements ArithmeticDecoder {
         trace('[Arithmetic.decode] emitting 1 bit. Data: %o', logData);
         this.low = mid;
         return 1;
-      } else if (this.value + this.valueRange <= mid) {
+      } else if (this.value + this.rangeMask < mid) {
         trace('[Arithmetic.decode] emitting 0 bit. Data: %o', logData);
-        this.high = mid;
+        this.high = mid - 1;
         return 0;
       } else {
         if (!this.padStream && this.input.isClosed()) {
@@ -785,108 +797,10 @@ class ArithmeticDecoderImpl implements ArithmeticDecoder {
         }
         const bit =
           this.padStream && this.input.isClosed() ? 0 : this.input.read();
-        this.valueRange /= 2;
-        this.value += bit * this.valueRange;
-        trace('[Arithmetic.decode] Reading more. Data: %o', () => ({
-          bit,
-          ...logData(),
-        }));
-      }
-    }
-  }
-  close(): void {
-    this.closed = true;
-  }
-  isClosed(): boolean {
-    return this.closed;
-  }
-}
-
-// To Keep everything below the 32-bit boundary (avoids dealing with sign
-// weirdness, and keeps it performant with V8 'smi' representation), this is
-// INCLUSIVE
-// const MAX = 0x7fffffff;
-// const THREE_QUARTER_31_BIT = 0x60000000;
-// const HALF_31_BIT = 0x40000000;
-// const QUARTER_31_BIT = 0x20000000;
-
-/**
- * TODO - use description from above
- */
-export class ArithmeticDecoder31BitImpl implements ArithmeticDecoder {
-  private closed = false;
-  private high = 2.0;
-  private low = 1.0;
-  private value = 1.0;
-  private valueRange = 1.0;
-
-  constructor(
-    private readonly input: BitReader,
-    private readonly padStream = false,
-  ) {}
-
-  decodeBit(p: number): Bit {
-    assert(!this.closed, 'Stream closed');
-    while (this.high - this.low <= 0.25) {
-      let zoom: string;
-      if (this.high <= 1.5) {
-        this.high = (this.high - 0.5) * 2.0;
-        this.value = (this.value - 0.5) * 2.0;
-        this.low = (this.low - 0.5) * 2.0;
-        zoom = 'low';
-      } else if (this.low >= 1.5) {
-        this.high = (this.high - 1.0) * 2.0;
-        this.value = (this.value - 1.0) * 2.0;
-        this.low = (this.low - 1.0) * 2.0;
-        zoom = 'high';
-      } else {
-        this.high = (this.high - 0.75) * 2.0;
-        this.value = (this.value - 0.75) * 2.0;
-        this.low = (this.low - 0.75) * 2.0;
-        zoom = 'mid';
-      }
-      this.valueRange *= 2;
-      trace('[Arithmetic.decode] zooming %o', () => ({
-        zoom,
-        low: this.low,
-        high: this.high,
-        value: this.value,
-        valueRange: this.valueRange,
-      }));
-    }
-
-    const mid = calcMid(this.low, this.high, p, 'decode');
-
-    const logData = () => {
-      return {
-        low: this.low,
-        mid,
-        high: this.high,
-        value: this.value,
-        valueRange: this.valueRange,
-        p,
-      };
-    };
-
-    trace('[Arithmetic.decode] working on: %o', logData);
-    for (;;) {
-      if (this.value >= mid) {
-        trace('[Arithmetic.decode] emitting 1 bit. Data: %o', logData);
-        this.low = mid;
-        return 1;
-      } else if (this.value + this.valueRange <= mid) {
-        trace('[Arithmetic.decode] emitting 0 bit. Data: %o', logData);
-        this.high = mid;
-        return 0;
-      } else {
-        if (!this.padStream && this.input.isClosed()) {
-          this.closed = true;
-          assert(false, 'No more bits in the stream');
+        this.rangeMask >>>= 1;
+        if (bit) {
+          this.value += this.rangeMask + 1;
         }
-        const bit =
-          this.padStream && this.input.isClosed() ? 0 : this.input.read();
-        this.valueRange /= 2;
-        this.value += bit * this.valueRange;
         trace('[Arithmetic.decode] Reading more. Data: %o', () => ({
           bit,
           ...logData(),
@@ -908,8 +822,12 @@ export class ArithmeticDecoder31BitImpl implements ArithmeticDecoder {
  */
 class ArithmeticEncoderImpl implements ArithmeticEncoder {
   private closed = false;
-  private high = 2.0;
-  private low = 1.0;
+
+  // invariant (prior to termination):
+  // MAX >= high >= low >= 0
+  private high = MAX;
+  private low = 0;
+
   // the number of bits bending resolution to the 01111.. vs 1000.. status
   private pendingBits = 0;
 
@@ -943,34 +861,48 @@ class ArithmeticEncoderImpl implements ArithmeticEncoder {
    */
   encodeBit(p: number, b: Bit): void {
     assert(!this.closed, 'Stream closed');
-    while (this.high - this.low <= 0.25) {
-      if (this.high <= 1.5) {
+    if (p >= 1) {
+      assert(
+        p === 1 && b === 0,
+        `[Arithmetic.encode] Invalid p: ${p}, b: ${b}`,
+      );
+      // nothing to encode
+      trace('[Arithmetic.encode] Got p: 1, no encoding required');
+      return;
+    } else if (p <= 0) {
+      assert(
+        p === 0 && b === 1,
+        `[Arithmetic.encode] Invalid p: ${p}, b: ${b}`,
+      );
+      // nothing to encode
+      trace('[Arithmetic.encode] Got p: 0, no encoding required');
+      return;
+    }
+
+    while (this.high - this.low < QUARTER_31_BIT) {
+      if (this.high < HALF_31_BIT) {
         this.zoomLow('encode');
-      } else if (this.low >= 1.5) {
+      } else if (this.low >= HALF_31_BIT) {
         this.zoomHigh('encode');
       } else {
         this.zoomMid('encode');
       }
     }
 
-    const mid = calcMid(this.low, this.high, p, 'encode');
+    // This needs to stay in sync with the Decoder above
+    const mid = this.low + 1 + Math.trunc(p * (this.high - this.low));
 
     trace('[Arithmetic.encode] working on: %o', () => ({
       low: this.low,
-      mid,
+      mid: mid,
       high: this.high,
       p,
       b,
     }));
     if (b) {
-      assert(
-        mid < this.high,
-        '[Arithmetic.encode] Invalid p == 1 with b === 1',
-      );
       this.low = mid;
     } else {
-      assert(mid > this.low, '[Arithmetic.encode] Invalid p == 0 with b === 0');
-      this.high = mid;
+      this.high = mid - 1;
     }
   }
 
@@ -989,10 +921,10 @@ class ArithmeticEncoderImpl implements ArithmeticEncoder {
       this.closed = true;
 
       if (terminateStream) {
-        while (this.high < 2.0 || this.low > 1.0) {
-          if (this.low > 1.0 && this.high >= 1.75) {
+        while (this.high < MAX || this.low > 0) {
+          if (this.low > 0 && this.high >= THREE_QUARTER_31_BIT) {
             this.zoomHigh('terminating');
-          } else if (this.high < 2.0 && this.low <= 1.25) {
+          } else if (this.high < MAX && this.low <= QUARTER_31_BIT) {
             this.zoomLow('terminating');
           } else {
             this.zoomMid('terminating');
@@ -1012,8 +944,8 @@ class ArithmeticEncoderImpl implements ArithmeticEncoder {
       } else {
         // different approach when not terminating - just find a viable
         // candidate with the fewest number of bits
-        while (this.low > 1.0 || this.pendingBits) {
-          if (this.high > 1.5) {
+        while (this.low > 0 || this.pendingBits) {
+          if (this.high >= HALF_31_BIT) {
             this.zoomHigh('closing');
           } else {
             this.zoomLow('closing');
@@ -1040,8 +972,8 @@ class ArithmeticEncoderImpl implements ArithmeticEncoder {
 
   private zoomHigh(debug: string) {
     this.writeBit(1);
-    this.high = (this.high - 1.0) * 2.0;
-    this.low = (this.low - 1.0) * 2.0;
+    this.high = ((this.high << 1) & MAX) | 1;
+    this.low = this.low & HALF_31_BIT ? (this.low << 1) & MAX : 0;
     trace('[Arithmetic.zoom] %s %o', debug, () => ({
       zoom: 'high',
       low: this.low,
@@ -1051,8 +983,8 @@ class ArithmeticEncoderImpl implements ArithmeticEncoder {
 
   private zoomLow(debug: string) {
     this.writeBit(0);
-    this.high = (this.high - 0.5) * 2.0;
-    this.low = (this.low - 0.5) * 2.0;
+    this.high = this.high & HALF_31_BIT ? MAX : (this.high << 1) | 1;
+    this.low = this.low << 1;
     trace('[Arithmetic.zoom] %s %o', debug, () => ({
       zoom: 'low',
       low: this.low,
@@ -1062,8 +994,12 @@ class ArithmeticEncoderImpl implements ArithmeticEncoder {
 
   private zoomMid(debug: string) {
     this.pendingBits++;
-    this.high = (this.high - 0.75) * 2.0;
-    this.low = (this.low - 0.75) * 2.0;
+    this.high =
+      this.high >= THREE_QUARTER_31_BIT
+        ? MAX
+        : ((this.high - QUARTER_31_BIT) << 1) | 1;
+    this.low =
+      this.low <= QUARTER_31_BIT ? 0 : (this.low - QUARTER_31_BIT) << 1;
     trace('[Arithmetic.zoom] %s %o', debug, () => ({
       zoom: 'mid',
       low: this.low,
@@ -1091,230 +1027,6 @@ class ArithmeticEncoderImpl implements ArithmeticEncoder {
       ++this.trailingZeros;
     }
   }
-}
-
-/**
- * Implementation class for ArithmeticEncoder. See ArithmeticDecoder for
- * general information on implementation details.
- */
-export class ArithmeticEncoder31BitImpl implements ArithmeticEncoder {
-  private closed = false;
-  private high = 2.0;
-  private low = 1.0;
-  // the number of bits bending resolution to the 01111.. vs 1000.. status
-  private pendingBits = 0;
-
-  // the number of trailing zeros. This is used to pro-actively trim the
-  // trailing zeros when `terminateStream` is false
-  private trailingZeros = 0;
-
-  constructor(
-    private readonly output: BitWriter,
-    state?: {
-      closed: boolean;
-      high: number;
-      low: number;
-      pendingBits: number;
-      trailingZeros: number;
-    },
-  ) {
-    if (state) {
-      this.closed = state.closed;
-      this.high = state.high;
-      this.low = state.low;
-      this.pendingBits = state.pendingBits;
-      this.trailingZeros = state.trailingZeros;
-    }
-  }
-
-  /**
-   * Write a single bit, with an associated probability.
-   *
-   * @throws if this encoder is closed
-   */
-  encodeBit(p: number, b: Bit): void {
-    assert(!this.closed, 'Stream closed');
-    while (this.high - this.low <= 0.25) {
-      if (this.high <= 1.5) {
-        this.zoomLow('encode');
-      } else if (this.low >= 1.5) {
-        this.zoomHigh('encode');
-      } else {
-        this.zoomMid('encode');
-      }
-    }
-
-    const mid = calcMid(this.low, this.high, p, 'encode');
-
-    trace('[Arithmetic.encode] working on: %o', () => ({
-      low: this.low,
-      mid,
-      high: this.high,
-      p,
-      b,
-    }));
-    if (b) {
-      assert(
-        mid < this.high,
-        '[Arithmetic.encode] Invalid p == 1 with b === 1',
-      );
-      this.low = mid;
-    } else {
-      assert(mid > this.low, '[Arithmetic.encode] Invalid p == 0 with b === 0');
-      this.high = mid;
-    }
-  }
-
-  /**
-   * Close this Arithmetic Encoder. Note: This does *not* close the underlying
-   * writer. It flushes any pending bits, and writes enough information to the
-   * stream to ensure the decoder can restore the original stream.
-   *
-   * @param terminateStream If true, enough bits are written such that the
-   *    decoder will not have to pad the end of its Reader. Though this
-   *    typically involves an extra bit, it allows for more data to be written
-   *    after in the underlying writer.
-   */
-  close(terminateStream = false): void {
-    if (!this.closed) {
-      this.closed = true;
-
-      if (terminateStream) {
-        while (this.high < 2.0 || this.low > 1.0) {
-          if (this.low > 1.0 && this.high >= 1.75) {
-            this.zoomHigh('terminating');
-          } else if (this.high < 2.0 && this.low <= 1.25) {
-            this.zoomLow('terminating');
-          } else {
-            this.zoomMid('terminating');
-          }
-        }
-        if (this.pendingBits) {
-          // rare, but it is technically possible for pending bits to be set
-          // here (requires low and high to be exactly set to 0 and 1
-          // respectively after a zoom-mid)
-          this.writeBit(1);
-          trace('[Arithmetic.close] Terminating pending: 1');
-        }
-        // finish off all the remaining zeros
-        for (; this.trailingZeros; --this.trailingZeros) {
-          this.output.write(0);
-        }
-      } else {
-        // different approach when not terminating - just find a viable
-        // candidate with the fewest number of bits
-        while (this.low > 1.0 || this.pendingBits) {
-          if (this.high > 1.5) {
-            this.zoomHigh('closing');
-          } else {
-            this.zoomLow('closing');
-          }
-        }
-      }
-    }
-  }
-
-  /** Returns true if this encoder is closed. */
-  isClosed(): boolean {
-    return this.closed;
-  }
-
-  clone(writer: BitWriter): ArithmeticEncoder {
-    return new ArithmeticEncoderImpl(writer, {
-      closed: this.closed,
-      high: this.high,
-      low: this.low,
-      pendingBits: this.pendingBits,
-      trailingZeros: this.trailingZeros,
-    });
-  }
-
-  private zoomHigh(debug: string) {
-    this.writeBit(1);
-    this.high = (this.high - 1.0) * 2.0;
-    this.low = (this.low - 1.0) * 2.0;
-    trace('[Arithmetic.zoom] %s %o', debug, () => ({
-      zoom: 'high',
-      low: this.low,
-      high: this.high,
-    }));
-  }
-
-  private zoomLow(debug: string) {
-    this.writeBit(0);
-    this.high = (this.high - 0.5) * 2.0;
-    this.low = (this.low - 0.5) * 2.0;
-    trace('[Arithmetic.zoom] %s %o', debug, () => ({
-      zoom: 'low',
-      low: this.low,
-      high: this.high,
-    }));
-  }
-
-  private zoomMid(debug: string) {
-    this.pendingBits++;
-    this.high = (this.high - 0.75) * 2.0;
-    this.low = (this.low - 0.75) * 2.0;
-    trace('[Arithmetic.zoom] %s %o', debug, () => ({
-      zoom: 'mid',
-      low: this.low,
-      high: this.high,
-    }));
-  }
-
-  /**
-   * Helper function for writing bits. This manager the pendingBits and
-   * trailingZeros.
-   */
-  private writeBit(bit: Bit) {
-    if (bit) {
-      for (; this.trailingZeros; --this.trailingZeros) this.output.write(0);
-      this.output.write(1);
-      this.trailingZeros = this.pendingBits;
-      this.pendingBits = 0;
-    } else {
-      if (this.pendingBits) {
-        for (; this.trailingZeros >= 0; --this.trailingZeros) {
-          this.output.write(0);
-        }
-        for (; this.pendingBits; --this.pendingBits) this.output.write(1);
-      }
-      ++this.trailingZeros;
-    }
-  }
-}
-
-/**
- * To ensure the encoder and decoder do the same exact work, the mid-point
- * calculation is pulled out here.
- */
-function calcMid(low: number, high: number, p: number, debug: string): number {
-  // Note: low and high are both between 1 and 2, so both are using the same
-  // double exponent. This means we can do the operations below while
-  // keeping 2.0 <= mid <= 1.0  (i.e. we don't have to worry about rounding
-  // error within the `high - low` portion)
-  const mid = low + p * (high - low);
-
-  if (mid >= high || isNaN(mid)) {
-    if (mid === high) {
-      return p < 1.0 ? high - Number.EPSILON : high;
-    } else {
-      throw new Error(
-        `[Arithmetic.${debug}] Invalid probablility from model: ${p}`,
-      );
-    }
-  }
-  // same - catching NaN with !(mid > low)
-  if (mid <= low || isNaN(mid)) {
-    if (mid === low) {
-      return p > 0.0 ? low + Number.EPSILON : low;
-    } else {
-      throw new Error(
-        `[Arithmetic.${debug}] Invalid probablility from model: ${p}`,
-      );
-    }
-  }
-  return mid;
 }
 
 /** A node in the Arithmetic Model */
@@ -1352,16 +1064,16 @@ function generateModelTree(symbols: ArithmeticSymbol[]): Node {
       assert(
         !child.isLeaf,
         'Common prefix: ' +
-          item.value.getBigBits(0, i).toString(2) +
+          item.value.getBigBits(0, i) +
           ' is a prefix for ' +
-          item.value.toBigInt().toString(2),
+          item.value.toBigInt(),
       );
       node = child;
     }
     assert(
       !node.weights[0] && !node.weights[0],
       'Indexing item is a prefix of one or more other items: ' +
-        item.value.toBigInt().toString(2),
+        item.value.toBigInt(),
     );
     node.isLeaf = true;
   }

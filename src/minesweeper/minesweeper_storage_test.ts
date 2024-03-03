@@ -42,7 +42,6 @@ describe('Minesweeper Storage', () => {
         let restoredBoardInfo: KnownBoardState | undefined = undefined;
         try {
           encoded = encodeBoardState(boardInfo);
-          // console.log('ratio" %d', boardId.length / cellCount);
           restoredBoardInfo = decodeBoardState(encoded);
           throwUnless(restoredBoardInfo).toEqual(boardInfo);
         } catch (e) {
@@ -51,11 +50,7 @@ describe('Minesweeper Storage', () => {
             height,
             mineCount,
             cellData,
-            restoredBoardInfo: {
-              width: restoredBoardInfo?.width,
-              height: restoredBoardInfo?.height,
-              cellData: restoredBoardInfo?.cellData,
-            },
+            restoredBoardInfo,
             i,
           });
 
@@ -163,7 +158,6 @@ describe('Minesweeper Storage', () => {
         let restoredBoardInfo: KnownBoardState | undefined = undefined;
         try {
           encoded = encodeBoardState(boardInfo);
-          // console.log('ratio" %d', boardId.length / cellCount);
           restoredBoardInfo = decodeBoardState(encoded);
           throwUnless(restoredBoardInfo).toEqual(boardInfo);
         } catch (e) {
@@ -172,11 +166,7 @@ describe('Minesweeper Storage', () => {
             height,
             mineCount,
             cellData,
-            restoredBoardInfo: {
-              width: restoredBoardInfo?.width,
-              height: restoredBoardInfo?.height,
-              mineMap: restoredBoardInfo?.cellData,
-            },
+            restoredBoardInfo,
             i,
           });
 

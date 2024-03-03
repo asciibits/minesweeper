@@ -62,8 +62,8 @@ describe('Arithmetic Coding', () => {
         expect(encode(bitset, 1 / 3)).toEqual(encoded);
         bitset = new BitSetWriter().writeBigBits(0xdeadbadbeefcafebaben).bitset;
         encoded = new BitSetWriter().writeBigBits(
-          0x6885e2473d778c3d2n,
-          67,
+          0x429f5bc8b3778c3d2n,
+          68,
         ).bitset;
         expect(encode(bitset, 1 / 3)).toEqual(encoded);
       });
@@ -96,8 +96,8 @@ describe('Arithmetic Coding', () => {
         decoded = new BitSetWriter().writeBatch(0b101, 3).bitset;
         expect(decode(bitset, 1 / 3, 3)).toEqual(decoded);
         bitset = new BitSetWriter().writeBigBits(
-          0x6885e2473d778c3d2n,
-          67,
+          0x429f5bc8b3778c3d2n,
+          68,
         ).bitset;
         decoded = new BitSetWriter().writeBigBits(
           0xdeadbadbeefcafebaben,
@@ -131,9 +131,12 @@ describe('Arithmetic Coding', () => {
     });
     // fit('test one sample', () => {
     //   setLoggingLevel(LoggingLevel.TRACE);
-    //   const bitCount = 3;
-    //   const bits = 0b110n;
-    //   const prob = 0.1;
+    //   const bitCount = 6;
+    //   const bits = 0b111110n;
+    //   const prob = 0.99;
+    //   // const bitCount = 2;
+    //   // const bits = 0b10n;
+    //   // const prob = 0.4;
     //   const bitset = new BitSetWriter().writeBigBits(bits, bitCount).bitset;
     //   let encoded: BitSet | undefined = undefined;
     //   let decoded: BitSet | undefined = undefined;
@@ -146,6 +149,7 @@ describe('Arithmetic Coding', () => {
     //       prob,
     //       bits: bits.toString(2),
     //       bitCount,
+    //       encoded: encoded?.toBigInt().toString(2),
     //       decoded: decoded?.toBigInt().toString(2),
     //     });
     //     throw e;
@@ -193,7 +197,7 @@ describe('Arithmetic Coding', () => {
         encoded = new BitSetWriter().writeBatch(0b1, 1).bitset;
         expect(encode(bitset, 1 / 3)).toEqual(encoded);
         bitset = new BitSetWriter().writeBigBits(0xdeadbadbeefcafebaben).bitset;
-        encoded = new BitSetWriter().writeBigBits(0x1885e2473d778c3d2n).bitset;
+        encoded = new BitSetWriter().writeBigBits(0x429f5bc8b3778c3d2n).bitset;
         expect(encode(bitset, 1 / 3)).toEqual(encoded);
       });
     });
@@ -224,7 +228,7 @@ describe('Arithmetic Coding', () => {
         bitset = new BitSetWriter().writeBatch(0b1, 1).bitset;
         decoded = new BitSetWriter().writeBatch(0b101, 3).bitset;
         expect(decode(bitset, 1 / 3, 3)).toEqual(decoded);
-        bitset = new BitSetWriter().writeBigBits(0x1885e2473d778c3d2n).bitset;
+        bitset = new BitSetWriter().writeBigBits(0x429f5bc8b3778c3d2n).bitset;
         decoded = new BitSetWriter().writeBigBits(
           0xdeadbadbeefcafebaben,
         ).bitset;
