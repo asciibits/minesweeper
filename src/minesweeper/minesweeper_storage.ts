@@ -806,40 +806,76 @@ function pOpenState(
     const neighborOpenWeight =
       neighborCount === 0 ? 0.5 : neighborsOpen / neighborCount;
 
-    // we use Math.pow to "lift" or "suppress" a probability. For example,
+    // we use bezier to "lift" or "suppress" a probability. For example,
     // if there are multiple neighbors, all of which are open, the current
-    // cell is much more likely to be open. So we use
-    // pOpen = 1 - (1 - pOpen)^a, where a >= 1. The higher 'a', the more
-    // pOpen is lifted. Similarly, to suppress (for no open neighbors), we use
-    // pOpen = pOpen^a, where again, a higher 'a' means more suppression.
-    // We have scaled neighborOpenWeight to be a value between -3 and 3,
-    // which will be our 'a' in the calculations below.
-
+    // cell is much more likely to be open.
     trace('[pOpenState] weighting neighbor %o', {
       neighborOpenWeight,
       pFlag,
       pOpen,
     });
-    if (neighborOpenWeight <= 0.5) {
-      // fewer open neighbors - suppress the probability of open or flag
-      if (isMine) {
-        pFlag = Math.pow(pFlag, (0.5 - neighborOpenWeight) * 4 + 1);
-      } else {
-        pOpen = Math.pow(pOpen, (0.5 - neighborOpenWeight) * 4 + 1);
-      }
+
+    if (isMine) {
+      pFlag = bezier(1 - neighborOpenWeight, pFlag);
+      // make sure there's enough space to encode a possible open mine
+      pOpen = Math.min(pOpen, (1 - pFlag) / 2);
     } else {
-      if (isMine) {
-        pFlag = 1 - Math.pow(1 - pFlag, (neighborOpenWeight - 0.5) * 4 + 1);
-        // make sure there's enough space to encode a possible open mine
-        pOpen = Math.min(pOpen, (1 - pFlag) / 2);
-      } else {
-        pOpen = 1 - Math.pow(1 - pOpen, (neighborOpenWeight - 0.5) * 4 + 1);
-        // make sure there's enough space to encode a possible wrong flag
-        pFlag = Math.min(pFlag, (1 - pOpen) / 2);
-      }
+      pOpen = bezier(1 - neighborOpenWeight, pOpen);
+      // make sure there's enough space to encode a possible wrong flag
+      pFlag = Math.min(pFlag, (1 - pOpen) / 2);
     }
     return {pOpen, pFlag};
   }
+}
+
+/**
+ * An implementation of a bezier curve. This has two fixed control points at
+ * [0,0] and [1,1], and a variable control point at [cx,1-cx]. The bezier
+ * curve is evaluated at the provided x coordinate.
+ *
+ * For cx-values above 0.5, this has a tendency to suppress x; it keeps its
+ * values at 0 and 1, but for values between it lowers them. The higher cx,
+ * the stronger the effect. For cx values below 0.5
+ */
+export function bezier(cx: number, x: number) {
+  if (cx === 0.5 || x === 0 || x === 1) return x;
+
+  const s = 2 * cx - 1;
+  const n = cx - sqrt(cx * cx - x * s);
+  return (1 / s - 1) * n + (n * n) / s;
+}
+
+/**
+ * This is a defensive sqrt - since the Javascript spec allows for
+ * implementation approximations (see
+ * https://tc39.es/ecma262/multipage/numbers-and-dates.html#sec-math.sqrt),
+ * we want to avoid implementation sqpecific implementations. Here, we assume
+ * that sqrt returns one of the two double values immediately around the
+ * algebraic value. If it is the one larger, then it steps down to the next
+ * double.
+ */
+function sqrt(v: number) {
+  let s = Math.sqrt(v);
+  let i = 0;
+  while (v < s * s) {
+    let g = s * (1.0 - Number.EPSILON / 2);
+    if (g === s) {
+      g = s - Number.MIN_VALUE;
+    }
+    const b = g + (s - g) / 2;
+    if (b < s && b > g) {
+      g = b;
+    }
+    const c = (g + s) / 2;
+    if (c < s && c > g) {
+      g = c;
+    }
+    s = g;
+    if (++i > 100) {
+      throw new Error('Error normalizing sqrt');
+    }
+  }
+  return s;
 }
 
 /**
