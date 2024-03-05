@@ -286,10 +286,14 @@ fieldset legend {
   padding: 0 0.5rem;
   background-color: rgba(var(--background-color), 0.8);
   box-shadow: var(--text-color) 0.1rem 0.1rem 0.2rem;
-  transition: all 0.25s allow-discrete;
+  /*
+   * Keep transition time here in sync with the in_progress_message transition
+   * delay
+   */
+  transition: all 0.25s;
 }
 
-.board_menu.active .board_menu_content {
+.board_menu:focus-within .board_menu_content {
   padding: 0.5rem;
   visibility: visible;
   max-height: 30rem;
@@ -303,12 +307,12 @@ fieldset legend {
   box-shadow: var(--text-color) 0.1rem 0.1rem 0.2rem;
   transition: all 0.2s;
 }
-.board_menu.active .board_menu_pulldown_wrapper,
-.board_menu:not(.active) .board_menu_pulldown_wrapper:hover {
+.board_menu:focus-within .board_menu_pulldown_wrapper,
+.board_menu:not(:focus-within) .board_menu_pulldown_wrapper:hover {
   background-color: rgba(var(--background-color), 0.8);
 }
-.board_menu.active .board_menu_pulldown_wrapper,
-.board_menu:not(.active) .board_menu_pulldown_wrapper:hover {
+.board_menu:focus-within .board_menu_pulldown_wrapper,
+.board_menu:not(:focus-within) .board_menu_pulldown_wrapper:hover {
   width: 1.8rem;
   height: 1.8rem;
 }
@@ -323,8 +327,8 @@ fieldset legend {
   /* mask-image: url('./menu.svg'); */
   mask-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCI+PHBhdGggZD0iTTQgNmgxNnYySDR6bTAgNWgxNnYySDR6bTAgNWgxNnYySDR6Ii8+PC9zdmc+);
 }
-.board_menu:not(.active) .board_menu_pulldown:hover,
-.board_menu.active .board_menu_pulldown {
+.board_menu:not(:focus-within) .board_menu_pulldown:hover,
+.board_menu:focus-within .board_menu_pulldown {
   background-color: var(--text-highlight);
 }
 .board_menu_pulldown_wrapper:has(.board_menu_pulldown:focus-visible)::after {
@@ -339,12 +343,19 @@ fieldset legend {
 }
 
 .in_progress_message {
-  display: none;
-  padding: 0.5rem 0 0.8rem 0;
+  display: block;
+  overflow: hidden;
+  max-height: 0;
+  margin: 0;
+  /* Keep delay here in sync with the board_menu_content transition time */
+  transition:
+    margin 0.01s 0.25s,
+    max-height 0.01s 0.25s;
 }
 
 .in_progress .in_progress_message {
-  display: block;
+  max-height: 2rem;
+  margin: 0.5rem 0 0.8rem 0;
 }
 .in_progress_message em {
   font-weight: 600;

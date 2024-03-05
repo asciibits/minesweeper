@@ -40,7 +40,7 @@ export function initUi(win: Window) {
   (win as unknown as Record<string, unknown>)['minesweeper'] = ui;
 }
 
-/**  */
+/** A Class to manage all the UI elements of the game */
 class MinesweeperUi implements EncodeBoardIdListener {
   // the Board data
   private readonly board: MineBoard;
@@ -220,7 +220,7 @@ class MinesweeperUi implements EncodeBoardIdListener {
         if (cell.peek() < 0) {
           elem.textContent = '*';
           elem.classList.add('mine');
-        } else if (cell.peek() > 0) {
+        } else {
           if (!this.board.isExploded()) {
             elem.textContent = cell.peek().toString();
             elem.classList.add('n' + cell.peek());
@@ -307,7 +307,9 @@ class MinesweeperUi implements EncodeBoardIdListener {
           // right-click - Either flag if unopened, or chord
           processFlag(cell);
         }
-        break;
+        // don't prevent default on mouse-down. This allows the 'click' event
+        // to fire, which handles focus properly
+        return;
       case 'mouseup':
         const releasedButtons = this.cellMouseDownButtons & ~event.buttons;
         this.cellMouseDownButtons &= event.buttons;
@@ -371,6 +373,7 @@ class MinesweeperUi implements EncodeBoardIdListener {
         x++;
         refocus = true;
         break;
+      case 'Enter':
       case ' ':
         // capture space so we handle the click on 'keydown' rather than
         // 'keypressed' - it seems more agile in a game environment
@@ -378,6 +381,10 @@ class MinesweeperUi implements EncodeBoardIdListener {
         break;
       case 'f':
         processFlag(cell);
+        break;
+      case 'Escape':
+        // move focus to the reset button
+        this.resetButton.focus();
         break;
       default:
         // allow other keystrokes to bubble
@@ -393,46 +400,14 @@ class MinesweeperUi implements EncodeBoardIdListener {
     }
   }
 
-  private handleCellClickEvent(event: Event) {
-    // only handle if the default action is still allowed
-    if (event.defaultPrevented) return;
-    const position = getPosition(event.target);
-    if (!position) {
-      return;
-    }
-    const cell = this.board.getCell(position.x, position.y);
-    if (!cell) {
-      return;
-    }
-    if (this.board.isExploded() || this.board.isComplete()) {
-      // no more action until game is reset
-      return;
-    }
-
-    processClick(cell);
-  }
-
   private handleMenuEvent(e: Event) {
-    const element = e.target as HTMLElement;
-    const name = element?.attributes.getNamedItem('name')?.value;
-
-    if (name === 'color_palette') {
-      // changes in color palette don't affect the game
+    if (e.defaultPrevented) return;
+    if (this.board.isStarted()) {
+      // don't make changes to an in-progress game
       return;
     }
-    const {width, height, mines} = this.getBoardConfig();
-    if (
-      this.board.getView().width !== width ||
-      this.board.getView().height !== height ||
-      this.board.getView().mineCount !== mines
-    ) {
-      // legit change to the game
-      this.rebuildMineField();
-    }
-    if (!this.board.isStarted() && name === 'initial_click') {
-      // the opening style changed - rebuild
-      this.rebuildMineField();
-    }
+    e.preventDefault();
+    this.rebuildMineField();
   }
 
   private handleResetEvent(e: MouseEvent) {
@@ -443,7 +418,6 @@ class MinesweeperUi implements EncodeBoardIdListener {
       // their descendents.
       return;
     }
-    e.preventDefault();
     try {
       switch (e.type) {
         case 'mousedown':
@@ -451,7 +425,9 @@ class MinesweeperUi implements EncodeBoardIdListener {
           if (this.resetMouseDownButtons & 1) {
             this.resetButton.classList.add('pressed');
           }
-          break;
+          // allow the default action to percolate - this allows the reset
+          // button to get focus
+          return;
         case 'mouseup':
           // For touch screens, they never get the 'mousedown' event, so give
           // them a chance to animate the button press
@@ -475,6 +451,7 @@ class MinesweeperUi implements EncodeBoardIdListener {
           this.resetButton.classList.remove('pressed');
           break;
       }
+      e.preventDefault();
     } catch (e) {
       logError(e);
     }
@@ -495,7 +472,6 @@ class MinesweeperUi implements EncodeBoardIdListener {
 
     const cellListener = (c: Cell, e: CellEvent) => this.handleCellEvent(c, e);
     const mouseListener = (e: MouseEvent) => this.handleCellMouseEvent(e);
-    const clickListener = (e: Event) => this.handleCellClickEvent(e);
     const keyListener = (e: KeyboardEvent) => this.handleCellKeyEvent(e);
 
     for (let y = 0; y < h; y++) {
@@ -515,7 +491,6 @@ class MinesweeperUi implements EncodeBoardIdListener {
         elem.addEventListener('mouseup', mouseListener);
         elem.addEventListener('mouseenter', mouseListener);
         elem.addEventListener('mouseleave', mouseListener);
-        elem.addEventListener('click', clickListener);
         elem.addEventListener('keydown', keyListener);
         this.mineFieldBoard.appendChild(elem);
       }

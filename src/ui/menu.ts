@@ -7,20 +7,28 @@ interface ConfigState {
 }
 
 export function initMenus(window: Window) {
-  const boardMenu = document.getElementById('board_menu') as HTMLInputElement;
-  const expertPreset = document.getElementById(
+  const boardMenu = window.document.getElementById(
+    'board_menu',
+  ) as HTMLInputElement;
+  const expertPreset = window.document.getElementById(
     'expert_preset',
   ) as HTMLInputElement;
-  const beginnerPreset = document.getElementById(
+  const beginnerPreset = window.document.getElementById(
     'beginner_preset',
   ) as HTMLInputElement;
-  const intermediatePreset = document.getElementById(
+  const intermediatePreset = window.document.getElementById(
     'intermediate_preset',
   ) as HTMLInputElement;
 
-  const widthElement = document.getElementById('width') as HTMLInputElement;
-  const heightElement = document.getElementById('height') as HTMLInputElement;
-  const mineCountElement = document.getElementById('mines') as HTMLInputElement;
+  const widthElement = window.document.getElementById(
+    'width',
+  ) as HTMLInputElement;
+  const heightElement = window.document.getElementById(
+    'height',
+  ) as HTMLInputElement;
+  const mineCountElement = window.document.getElementById(
+    'mines',
+  ) as HTMLInputElement;
 
   function updateDimensions(
     width: string,
@@ -85,12 +93,16 @@ export function initMenus(window: Window) {
     }),
   );
 
-  const body = document.getElementsByTagName('body')[0];
-  const systemColor = document.getElementById(
+  const body = window.document.getElementsByTagName('body')[0];
+  const systemColor = window.document.getElementById(
     'system_color',
   ) as HTMLInputElement;
-  const lightColor = document.getElementById('light_color') as HTMLInputElement;
-  const darkColor = document.getElementById('dark_color') as HTMLInputElement;
+  const lightColor = window.document.getElementById(
+    'light_color',
+  ) as HTMLInputElement;
+  const darkColor = window.document.getElementById(
+    'dark_color',
+  ) as HTMLInputElement;
 
   systemColor.addEventListener('click', () => {
     body.classList.remove('dark');
@@ -108,28 +120,19 @@ export function initMenus(window: Window) {
     saveState();
   });
 
-  const menuPulldown = document.getElementById(
-    'board_menu_pulldown',
-  ) as HTMLInputElement;
-  menuPulldown.addEventListener('click', () => {
-    boardMenu.classList.toggle('active');
-  });
-  window.addEventListener('click', e => {
-    if (!boardMenu.contains(e.target as Node)) {
-      boardMenu.classList.remove('active');
-    }
-  });
   boardMenu.addEventListener('keydown', e => {
     if (e.code === 'Escape') {
-      boardMenu.classList.remove('active');
+      (window.document.activeElement as HTMLElement)?.blur?.();
     }
   });
 
-  const noMineElement = document.getElementById('no_mine') as HTMLInputElement;
-  const openAreaElement = document.getElementById(
+  const noMineElement = window.document.getElementById(
+    'no_mine',
+  ) as HTMLInputElement;
+  const openAreaElement = window.document.getElementById(
     'open_area',
   ) as HTMLInputElement;
-  const minePossibleElement = document.getElementById(
+  const minePossibleElement = window.document.getElementById(
     'mine_possible',
   ) as HTMLInputElement;
 
