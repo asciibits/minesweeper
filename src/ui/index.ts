@@ -6,6 +6,8 @@ const win: Window | undefined =
   typeof window === 'undefined' ? undefined : window;
 
 if (win) {
-  initMenus(win);
-  initUi(win);
+  win.addEventListener('load', () => {
+    initMenus(win);
+    initUi(win);
+  });
 }

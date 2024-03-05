@@ -24,22 +24,20 @@ import {
 
 /** Initialize the UI */
 export function initUi(win: Window) {
-  win.addEventListener('load', () => {
-    let ui: MinesweeperUi;
+  let ui: MinesweeperUi;
 
-    const url = new URL(win.location.href);
-    const boardId = url.searchParams.get('board_id');
-    if (boardId) {
-      const viewState = url.searchParams.get('view_state') ?? undefined;
-      const elapsedTime = url.searchParams.get('elapsed_time') ?? undefined;
-      ui = new MinesweeperUi(win, boardId, viewState, elapsedTime);
-    } else {
-      ui = new MinesweeperUi(win);
-    }
+  const url = new URL(win.location.href);
+  const boardId = url.searchParams.get('board_id');
+  if (boardId) {
+    const viewState = url.searchParams.get('view_state') ?? undefined;
+    const elapsedTime = url.searchParams.get('elapsed_time') ?? undefined;
+    ui = new MinesweeperUi(win, boardId, viewState, elapsedTime);
+  } else {
+    ui = new MinesweeperUi(win);
+  }
 
-    // for debugging in the UI, make the board available to the console
-    (win as unknown as Record<string, unknown>)['minesweeper'] = ui;
-  });
+  // for debugging in the UI, make the board available to the console
+  (win as unknown as Record<string, unknown>)['minesweeper'] = ui;
 }
 
 /**  */
@@ -100,7 +98,7 @@ class MinesweeperUi implements EncodeBoardIdListener {
 
     // set up the UI listeners
     this.boardMenu.addEventListener('change', e => this.handleMenuEvent(e));
-    this.resetButton.addEventListener('click', () => this.rebuildGame());
+    this.resetButton.addEventListener('click', () => this.rebuildMineField());
     const resetHandler = (e: MouseEvent) => this.handleResetEvent(e);
     this.resetHeader.addEventListener('mousedown', resetHandler);
     this.resetHeader.addEventListener('mouseup', resetHandler);
@@ -108,7 +106,7 @@ class MinesweeperUi implements EncodeBoardIdListener {
     this.resetHeader.addEventListener('mouseover', resetHandler);
 
     // perform the initial game build
-    this.rebuildGame(boardId, viewState, elapsedTime);
+    this.rebuildMineField(boardId, viewState, elapsedTime);
   }
 
   private requestBoardEncode(attributes?: Record<string, unknown>) {
@@ -429,11 +427,11 @@ class MinesweeperUi implements EncodeBoardIdListener {
       this.board.getView().mineCount !== mines
     ) {
       // legit change to the game
-      this.rebuildGame();
+      this.rebuildMineField();
     }
     if (!this.board.isStarted() && name === 'initial_click') {
       // the opening style changed - rebuild
-      this.rebuildGame();
+      this.rebuildMineField();
     }
   }
 
@@ -552,14 +550,14 @@ class MinesweeperUi implements EncodeBoardIdListener {
   }
 
   /** Rebuild the  */
-  private rebuildGame(): void;
-  private rebuildGame(
+  private rebuildMineField(): void;
+  private rebuildMineField(
     boardId?: string,
     viewState?: string,
     elapsedTime?: string,
   ): void;
-  private rebuildGame(boardState: KnownBoardState): void;
-  private rebuildGame(
+  private rebuildMineField(boardState: KnownBoardState): void;
+  private rebuildMineField(
     boardIdOrState?: KnownBoardState | string,
     viewState?: string,
     elapsedTime?: string,
