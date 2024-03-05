@@ -1,4 +1,4 @@
-import {initMenus} from './sidebar.js';
+import {initMenus} from './menu.js';
 import {initUi} from './minesweeper_ui.js';
 
 /** @fileoverview The master export file */
