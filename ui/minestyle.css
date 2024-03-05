@@ -262,7 +262,7 @@ fieldset legend {
 }
 
 .opening_style {
-  margin-top: 0.5rem;
+  margin-top: 0.8rem;
   grid-template-columns: repeat(3, auto);
 }
 
@@ -338,6 +338,19 @@ fieldset legend {
   pointer-events: none;
 }
 
+.in_progress_message {
+  display: none;
+  padding: 0.5rem 0 0.8rem 0;
+}
+
+.in_progress .in_progress_message {
+  display: block;
+}
+.in_progress_message em {
+  font-weight: 600;
+  color: #ff6767;
+}
+
 .labeled_input {
   display: block;
   position: relative;
@@ -409,6 +422,7 @@ fieldset legend {
   display: flex;
   align-items: center;
   justify-content: center;
+  pointer-events: none;
 }
 
 .header_part.left_justify {
@@ -431,6 +445,7 @@ fieldset legend {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   padding: 0 0.5rem 0 0.5rem;
+  pointer-events: auto;
 }
 
 #reset {
@@ -492,7 +507,6 @@ fieldset legend {
   background-origin: border-box;
 }
 
-.minefield .closed:active,
 .minefield .closed.pressed {
   border-top-width: 0.15rem;
   border-left-width: 0.15rem;

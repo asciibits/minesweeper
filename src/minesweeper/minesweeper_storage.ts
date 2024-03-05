@@ -1,7 +1,14 @@
 import {Bit, BitSetWriter, toBitReader, toBitWriter} from '../util/io.js';
 import {DeltaCoder} from '../util/storage.js';
 import {assert} from '../util/assert.js';
-import {CellVisibleState, MineBoard, MineField} from './minesweeper.js';
+import {
+  BoardEventType,
+  Cell,
+  CellVisibleState,
+  MineBoard,
+  MineField,
+  mineFieldsEqual,
+} from './minesweeper.js';
 import {
   ArithmeticDecoder,
   ArithmeticEncoder,
@@ -177,6 +184,63 @@ export function decodeBoardState(
     boardInfo.elapsedTime = elapsedTime;
   }
   return boardInfo;
+}
+
+export function applyBoardState(
+  board: MineBoard,
+  boardState: KnownBoardState,
+  attributes?: Record<string, unknown>,
+) {
+  const mineField = getMineField(boardState);
+  // only reset the board if we have a new minefield. This optimization
+  // prevents building up the entire board when only a part of it is
+  // changing
+  const needsReset = !mineFieldsEqual(mineField, board.getView());
+  if (needsReset) {
+    board.reset(mineField, attributes);
+  }
+  const openMines = new Set<Cell>();
+  for (let i = 0; i < boardState.cellData.length; i++) {
+    const cell = board.getCell(i);
+    cell.setWrong(false, attributes);
+    switch (boardState.cellData[i].openState) {
+      case OpenState.OPENED:
+        if (cell.isMine()) {
+          openMines.add(cell);
+        } else {
+          cell.openNoExpand(attributes);
+        }
+        break;
+      case OpenState.FLAGGED:
+        cell.close(attributes);
+        cell.flag(true, attributes);
+        break;
+      default:
+        cell.close(attributes);
+        cell.flag(false, attributes);
+        break;
+    }
+  }
+  // open mines after the rest of the board is build (allows the UI to
+  // have everything else properly rendered before showing the bomb
+  // status)
+  board.openGroup(openMines, attributes);
+  if (needsReset && boardState.elapsedTime) {
+    board.setTimeElapsed(boardState.elapsedTime, attributes);
+  }
+  // force a TIME event for completed game
+  if (board.isComplete() || board.isExploded()) {
+    board.fireEvent(BoardEventType.TIME_ELAPSED, attributes);
+  }
+}
+
+export function getMineField(boardInfo: KnownBoardState): MineField {
+  const {width, height, cellData} = boardInfo;
+  return MineField.createMineFieldWithMineMap(
+    width,
+    height,
+    cellData.map(c => c.isMine),
+  );
 }
 
 export function assertBoardState(

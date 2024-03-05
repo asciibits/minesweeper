@@ -1,19 +1,12 @@
 import {BitSet} from '../util/io.js';
 import {error, info, trace} from '../util/logging.js';
 import {assert} from '../util/assert.js';
-import {
-  BoardEventType,
-  Cell,
-  CellVisibleState,
-  MineBoard,
-  MineField,
-  MineFieldView,
-  mineFieldsEqual,
-} from './minesweeper.js';
+import {CellVisibleState, MineBoard, MineFieldView} from './minesweeper.js';
 import {
   EncodedBoardState,
   KnownBoardState,
   OpenState,
+  applyBoardState,
   assertBoardState,
   assertEncodedBoardState,
 } from './minesweeper_storage.js';
@@ -189,47 +182,7 @@ export class BoardIdWorker {
     trace('[BoardIdWorker.addDecodeToBoardListener]');
     const listener: DecodeBoardIdListener = {
       handleDecodeResponse: (boardState: KnownBoardState) => {
-        const mineField = getMineField(boardState);
-        // only reset the board if we have a new minefield. This optimization
-        // prevents building up the entire board when only a part of it is
-        // changing
-        const needsReset = !mineFieldsEqual(mineField, board.getView());
-        if (needsReset) {
-          board.reset(mineField, {DECODING: true});
-        }
-        const openMines = new Set<Cell>();
-        for (let i = 0; i < boardState.cellData.length; i++) {
-          const cell = board.getCell(i);
-          cell.setWrong(false, {DECODING: true});
-          switch (boardState.cellData[i].openState) {
-            case OpenState.OPENED:
-              if (cell.isMine()) {
-                openMines.add(cell);
-              } else {
-                cell.openNoExpand({DECODING: true});
-              }
-              break;
-            case OpenState.FLAGGED:
-              cell.close({DECODING: true});
-              cell.flag(true, {DECODING: true});
-              break;
-            default:
-              cell.close({DECODING: true});
-              cell.flag(false, {DECODING: true});
-              break;
-          }
-        }
-        // open mines after the rest of the board is build (allows the UI to
-        // have everything else properly rendered before showing the bomb
-        // status)
-        board.openGroup(openMines, {DECODING: true});
-        if (needsReset && boardState.elapsedTime) {
-          board.setTimeElapsed(boardState.elapsedTime, {DECODING: true});
-        }
-        // force a TIME event for completed game
-        if (board.isComplete() || board.isExploded()) {
-          board.fireEvent(BoardEventType.TIME_ELAPSED, {DECODING: true});
-        }
+        applyBoardState(board, boardState, {DECODING: true});
       },
     };
     this.removeDecodeToBoardListener(board);
@@ -252,15 +205,6 @@ export class BoardIdWorker {
     this.boardListeners.clear();
     this.worker.terminate();
   }
-}
-
-function getMineField(boardInfo: KnownBoardState) {
-  const {width, height, cellData} = boardInfo;
-  return MineField.createMineFieldWithMineMap(
-    width,
-    height,
-    cellData.map(c => c.isMine),
-  );
 }
 
 function getBoardInfo(board: MineBoard): KnownBoardState {
