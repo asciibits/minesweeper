@@ -1,4 +1,3 @@
-import {initMenus} from './menu.js';
 import {initUi} from './minesweeper_ui.js';
 
 /** @fileoverview The master export file */
@@ -7,7 +6,6 @@ const win: Window | undefined =
 
 if (win) {
   win.addEventListener('load', () => {
-    initMenus(win);
     initUi(win);
   });
 }

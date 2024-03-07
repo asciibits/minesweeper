@@ -47,12 +47,21 @@ class MinesweeperUi implements EncodeBoardIdListener {
   private readonly boardIdWorker: BoardIdWorker;
 
   // the UI elements
+  private readonly bodyElement: HTMLBodyElement;
   private readonly boardMenu: HTMLElement;
   private readonly boardMenuPulldown: HTMLButtonElement;
   private readonly widthElement: HTMLInputElement;
   private readonly heightElement: HTMLInputElement;
   private readonly mineCountElement: HTMLInputElement;
-  private readonly bodyElement: HTMLBodyElement;
+  private readonly expertPreset: HTMLInputElement;
+  private readonly intermediatePreset: HTMLInputElement;
+  private readonly beginnerPreset: HTMLInputElement;
+  private readonly noMineElement: HTMLInputElement;
+  private readonly openAreaElement: HTMLInputElement;
+  private readonly minePossibleElement: HTMLInputElement;
+  private readonly systemColor: HTMLInputElement;
+  private readonly lightColor: HTMLInputElement;
+  private readonly darkColor: HTMLInputElement;
   private readonly mineFieldBoard: HTMLElement;
   private readonly minefieldBoardWrapper: HTMLElement;
   private readonly resetButton: HTMLElement;
@@ -84,12 +93,21 @@ class MinesweeperUi implements EncodeBoardIdListener {
 
     // initialize the UI elements
     const elements = getDocumentElements(win);
+    this.bodyElement = elements.bodyElement;
     this.boardMenu = elements.boardMenu;
     this.boardMenuPulldown = elements.boardMenuPulldown;
     this.widthElement = elements.widthElement;
     this.heightElement = elements.heightElement;
     this.mineCountElement = elements.mineCountElement;
-    this.bodyElement = elements.bodyElement;
+    this.expertPreset = elements.expertPreset;
+    this.intermediatePreset = elements.intermediatePreset;
+    this.beginnerPreset = elements.beginnerPreset;
+    this.noMineElement = elements.noMineElement;
+    this.openAreaElement = elements.openAreaElement;
+    this.minePossibleElement = elements.minePossibleElement;
+    this.systemColor = elements.systemColor;
+    this.lightColor = elements.lightColor;
+    this.darkColor = elements.darkColor;
     this.mineFieldBoard = elements.mineFieldBoard;
     this.minefieldBoardWrapper = elements.minefieldBoardWrapper;
     this.resetButton = elements.resetButton;
@@ -103,6 +121,23 @@ class MinesweeperUi implements EncodeBoardIdListener {
 
     // set up the UI listeners
     this.boardMenu.addEventListener('change', e => this.handleMenuEvent(e));
+    this.boardMenu.addEventListener('keydown', e => this.handleMenuKeyEvent(e));
+    this.expertPreset.addEventListener('click', () =>
+      this.handlePresetClickEvent(30, 16, 99),
+    );
+    this.intermediatePreset.addEventListener('click', () =>
+      this.handlePresetClickEvent(16, 16, 40),
+    );
+    this.beginnerPreset.addEventListener('click', () =>
+      this.handlePresetClickEvent(9, 9, 10),
+    );
+    [this.widthElement, this.heightElement, this.mineCountElement].forEach(e =>
+      e.addEventListener('change', () => this.highlightActivePreset()),
+    );
+    this.noMineElement.addEventListener('change', () => this.saveState());
+    this.openAreaElement.addEventListener('change', () => this.saveState());
+    this.minePossibleElement.addEventListener('change', () => this.saveState());
+
     this.resetButton.addEventListener('click', () => this.rebuildMineField());
     const resetMouseHandler = (e: MouseEvent) => this.handleResetMouseEvent(e);
     const resetTouchHandler = (e: TouchEvent) => this.handleResetTouchEvent(e);
@@ -111,6 +146,12 @@ class MinesweeperUi implements EncodeBoardIdListener {
     this.resetHeader.addEventListener('mouseout', resetMouseHandler);
     this.resetHeader.addEventListener('mouseover', resetMouseHandler);
     this.resetHeader.addEventListener('touchend', resetTouchHandler);
+
+    // read in the current settings, if available
+    const settings = JSON.parse(
+      win.localStorage?.getItem('settings') ?? 'null',
+    ) as ConfigState | null;
+    this.setSettings(settings);
 
     // perform the initial game build
     this.rebuildMineField(boardId, viewState, elapsedTime);
@@ -195,7 +236,7 @@ class MinesweeperUi implements EncodeBoardIdListener {
           .filter(
             e =>
               e.value ===
-              OpeningRestrictions[this.getBoardConfig().openingConfig],
+              OpeningRestrictions[this.getBoardConfig().initialClick],
           )
           .forEach(e => (e.checked = true));
         if (!e.attributes?.['DECODING']) {
@@ -460,6 +501,14 @@ class MinesweeperUi implements EncodeBoardIdListener {
     this.rebuildMineField();
   }
 
+  private handleMenuKeyEvent(e: KeyboardEvent) {
+    if (e.defaultPrevented) return;
+    if (e.code === 'Escape') {
+      (window.document.activeElement as HTMLElement)?.blur?.();
+      e.preventDefault();
+    }
+  }
+
   private handleResetMouseEvent(e: MouseEvent) {
     if (e.defaultPrevented) return;
     if (e.target !== this.resetHeader) {
@@ -629,45 +678,153 @@ class MinesweeperUi implements EncodeBoardIdListener {
       }
       applyBoardState(this.board, state, {DECODING: true});
     } else {
-      const {width, height, mines, openingConfig} = this.getBoardConfig();
+      const {width, height, mines, initialClick} = this.getBoardConfig();
       // use a mine field that delays creation until the initial click
       this.board.reset(
-        new DelayedMineField(width, height, mines, openingConfig),
+        new DelayedMineField(width, height, mines, initialClick),
       );
     }
   }
 
   private getBoardConfig() {
-    let width = this.widthElement.valueAsNumber;
-    let height = this.heightElement.valueAsNumber;
-    let mines = this.mineCountElement.valueAsNumber;
-    const openingConfigValue = this.openingConfigElements.find(e => e.checked)
-      ?.value as keyof typeof OpeningRestrictions;
-    let openingConfig =
-      OpeningRestrictions[openingConfigValue] ?? OpeningRestrictions.ANY;
+    let {width, height, mineCount, initialClick} = this.getSettings();
 
-    if (isNaN(width) || width < 1) {
+    if (!width || isNaN(width) || width < 1) {
       width = 1;
     }
-    if (isNaN(height) || height < 1) {
+    if (!height || isNaN(height) || height < 1) {
       height = 1;
     }
     const cellCount = width * height;
-    if (isNaN(mines) || mines < 1) {
-      mines = 0;
-    } else if (mines > cellCount) {
-      mines = cellCount;
+    if (!mineCount || isNaN(mineCount) || mineCount < 1) {
+      mineCount = 0;
+    } else if (mineCount > cellCount) {
+      mineCount = cellCount;
     }
-    if (mines === cellCount) {
+    if (mineCount === cellCount) {
       // No room for a non-mine opening
-      openingConfig = OpeningRestrictions.ANY;
-    } else if (mines > cellCount - 9) {
-      if (openingConfig === OpeningRestrictions.ZERO) {
+      initialClick = OpeningRestrictions.ANY;
+    } else if (mineCount > cellCount - 9) {
+      if (initialClick === OpeningRestrictions.ZERO) {
         // no room for a zero opening
-        openingConfig = OpeningRestrictions.ANY;
+        initialClick = OpeningRestrictions.ANY;
       }
     }
-    return {width, height, mines, openingConfig};
+    return {width, height, mines: mineCount, initialClick};
+  }
+
+  private updateMenuDimensions(
+    width: number,
+    height: number,
+    mineCount: number,
+  ): boolean {
+    let changed = false;
+    if (this.widthElement.valueAsNumber !== width) {
+      changed = true;
+      this.widthElement.valueAsNumber = width;
+    }
+    if (this.heightElement.valueAsNumber !== height) {
+      changed = true;
+      this.heightElement.valueAsNumber = height;
+    }
+    if (this.mineCountElement.valueAsNumber !== mineCount) {
+      changed = true;
+      this.mineCountElement.valueAsNumber = mineCount;
+    }
+    this.highlightActivePreset();
+    this.saveState();
+    return changed;
+  }
+
+  private handlePresetClickEvent(
+    width: number,
+    height: number,
+    mineCount: number,
+  ) {
+    if (this.updateMenuDimensions(width, height, mineCount)) {
+      this.boardMenu.dispatchEvent(new Event('change'));
+    }
+  }
+
+  private highlightActivePreset() {
+    const {width, height, mines} = this.getBoardConfig();
+    let activeButton: HTMLElement | undefined = undefined;
+    if (height === 16 && width === 30 && mines === 99) {
+      activeButton = this.expertPreset;
+    } else if (height === 16 && width === 16 && mines === 40) {
+      activeButton = this.intermediatePreset;
+    } else if (height === 9 && width === 9 && mines === 10) {
+      activeButton = this.beginnerPreset;
+    }
+    [this.expertPreset, this.intermediatePreset, this.beginnerPreset].forEach(
+      e => {
+        e.classList.toggle('active', activeButton === e);
+      },
+    );
+  }
+
+  /** Get the current state of the menu options */
+  private getSettings(): ConfigState {
+    const colorPalette = this.darkColor.checked
+      ? 'DARK'
+      : this.lightColor.checked
+        ? 'LIGHT'
+        : 'SYSTEM';
+    const width = this.widthElement.valueAsNumber;
+    const height = this.heightElement.valueAsNumber;
+    const mineCount = this.mineCountElement.valueAsNumber;
+    const initialClick = this.openAreaElement.checked
+      ? OpeningRestrictions.ZERO
+      : this.minePossibleElement.checked
+        ? OpeningRestrictions.ANY
+        : OpeningRestrictions.NO_MINE;
+    return {colorPalette, width, height, mineCount, initialClick};
+  }
+
+  private setSettings(configState?: ConfigState | null) {
+    switch (configState?.colorPalette) {
+      case 'DARK':
+        if (!this.darkColor.checked) {
+          this.darkColor.checked = true;
+          this.darkColor.dispatchEvent(new Event('click'));
+        }
+        break;
+      case 'LIGHT':
+        if (!this.lightColor.checked) {
+          this.lightColor.checked = true;
+          this.lightColor.dispatchEvent(new Event('click'));
+        }
+        break;
+      default: // 'SYSTEM'
+        if (!this.systemColor.checked) {
+          this.systemColor.checked = true;
+          this.systemColor.dispatchEvent(new Event('click'));
+        }
+        break;
+    }
+    switch (configState?.initialClick) {
+      case OpeningRestrictions.ZERO:
+        this.openAreaElement.checked = true;
+        break;
+      case OpeningRestrictions.ANY:
+        this.minePossibleElement.checked = true;
+        break;
+      default: // 'NO_MINE'
+        this.noMineElement.checked = true;
+        break;
+    }
+    this.updateMenuDimensions(
+      configState?.width ?? 30,
+      configState?.height ?? 16,
+      configState?.mineCount ?? 99,
+    );
+  }
+
+  private saveState() {
+    const settings = JSON.stringify(this.getSettings());
+    if (this.win.localStorage) {
+      this.win.localStorage.setItem('settings', settings);
+    }
   }
 
   private getCellForUiEvent(
@@ -734,6 +891,14 @@ function getPosition(cell: unknown): Position | null {
   return null;
 }
 
+interface ConfigState {
+  colorPalette: 'SYSTEM' | 'LIGHT' | 'DARK';
+  width: number;
+  height: number;
+  mineCount: number;
+  initialClick: OpeningRestrictions;
+}
+
 class DigitalDisplay {
   constructor(private readonly cells: HTMLElement[]) {}
 
@@ -794,6 +959,9 @@ function initBoardIdWorker(win: Window, board: MineBoard) {
 }
 
 function getDocumentElements(win: Window) {
+  const bodyElement = win.document.getElementsByTagName(
+    'body',
+  )[0] as HTMLBodyElement;
   const boardMenu = win.document.getElementById('board_menu') as HTMLElement;
   const boardMenuPulldown = win.document.getElementById(
     'board_menu_pulldown',
@@ -806,9 +974,34 @@ function getDocumentElements(win: Window) {
   const mineCountElement = win.document.getElementById(
     'mines',
   ) as HTMLInputElement;
-  const bodyElement = win.document.getElementsByTagName(
-    'body',
-  )[0] as HTMLBodyElement;
+  const expertPreset = window.document.getElementById(
+    'expert_preset',
+  ) as HTMLInputElement;
+  const intermediatePreset = window.document.getElementById(
+    'intermediate_preset',
+  ) as HTMLInputElement;
+  const beginnerPreset = window.document.getElementById(
+    'beginner_preset',
+  ) as HTMLInputElement;
+  const noMineElement = window.document.getElementById(
+    'no_mine',
+  ) as HTMLInputElement;
+  const openAreaElement = window.document.getElementById(
+    'open_area',
+  ) as HTMLInputElement;
+  const minePossibleElement = window.document.getElementById(
+    'mine_possible',
+  ) as HTMLInputElement;
+  const systemColor = window.document.getElementById(
+    'system_color',
+  ) as HTMLInputElement;
+  const lightColor = window.document.getElementById(
+    'light_color',
+  ) as HTMLInputElement;
+  const darkColor = window.document.getElementById(
+    'dark_color',
+  ) as HTMLInputElement;
+
   const mineFieldBoard = win.document.getElementById(
     'minefield',
   ) as HTMLElement;
@@ -833,12 +1026,21 @@ function getDocumentElements(win: Window) {
   ) as HTMLElement;
 
   return {
+    bodyElement,
     boardMenu,
     boardMenuPulldown,
     widthElement,
     heightElement,
     mineCountElement,
-    bodyElement,
+    expertPreset,
+    intermediatePreset,
+    beginnerPreset,
+    noMineElement,
+    openAreaElement,
+    minePossibleElement,
+    systemColor,
+    lightColor,
+    darkColor,
     mineFieldBoard,
     minefieldBoardWrapper,
     resetButton,
