@@ -372,7 +372,9 @@ class MinesweeperUi implements EncodeBoardIdListener {
         });
         if (dx <= width * scale && dy <= height * scale) {
           // we have a legit touch!
-          event.preventDefault();
+          if (event.cancelable) {
+            event.preventDefault();
+          }
           processClick(cell);
         }
         break;
