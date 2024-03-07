@@ -63,6 +63,7 @@ class MinesweeperUi implements EncodeBoardIdListener {
   // handler state
   private resetMouseDownButtons = 0;
   private cellMouseDownButtons = 0;
+  private touchStart?: Partial<Touch>;
 
   constructor(
     private readonly win: Window,
@@ -282,19 +283,8 @@ class MinesweeperUi implements EncodeBoardIdListener {
   }
 
   private handleCellMouseEvent(event: MouseEvent) {
-    // only handle if the default action is still allowed
-    if (event.defaultPrevented) return;
-
-    const position = getPosition(event.target);
-    if (!position) {
-      return;
-    }
-    const cell = this.board.getCell(position.x, position.y);
+    const cell = this.getCellForUiEvent(event);
     if (!cell) {
-      return;
-    }
-    if (this.board.isExploded() || this.board.isComplete()) {
-      // no more action until game is reset
       return;
     }
     switch (event.type) {
@@ -334,25 +324,69 @@ class MinesweeperUi implements EncodeBoardIdListener {
     event.preventDefault();
   }
 
-  private handleCellKeyEvent(event: KeyboardEvent) {
-    // only handle if the default action is still allowed
-    if (event.defaultPrevented) return;
-
-    if (this.board.isExploded() || this.board.isComplete()) {
-      // no more action until game is reset
-      return;
-    }
-    if (event.altKey || event.shiftKey || event.ctrlKey || event.metaKey) {
-      // don't handle any of the modified keys
-      return;
-    }
-
-    const position = getPosition(event.target);
-    let {x, y} = position ?? {x: 0, y: 0};
-    const cell = this.board.getCell(x, y);
+  private handleCellTouchEvent(event: TouchEvent) {
+    const cell = this.getCellForUiEvent(event);
     if (!cell) {
       return;
     }
+    const touches = event.touches.length ? event.touches : event.changedTouches;
+    if (touches.length !== 1) {
+      // only handle single press
+      this.touchStart = undefined;
+      return;
+    }
+    const touch = touches[0];
+    if (this.touchStart && touch.identifier !== this.touchStart.identifier) {
+      // different touch action - clear the start state
+      this.touchStart = undefined;
+    }
+
+    switch (event.type) {
+      case 'touchstart':
+        const {identifier, screenX, screenY} = touch;
+        this.touchStart = {
+          identifier,
+          screenX,
+          screenY,
+        };
+        // allow default actions
+        return;
+      case 'touchend':
+        if (!this.touchStart) {
+          // no matching start for this end - nothing to do
+          return undefined;
+        }
+        // get the width of one square
+        const cellElement = cell.getAttribute('element') as HTMLElement;
+        const {width, height} = cellElement?.getBoundingClientRect?.() ?? {
+          width: 0,
+          height: 0,
+        };
+        const scale = this.win.visualViewport?.scale ?? 1;
+        const dx = Math.abs(touch.screenX - (this.touchStart?.screenX ?? 0));
+        const dy = Math.abs(touch.screenY - (this.touchStart?.screenY ?? 0));
+        console.log('Got touch: %o', {
+          touch,
+          scale,
+          touchStart: this.touchStart,
+        });
+        if (dx <= width * scale && dy <= height * scale) {
+          // we have a legit touch!
+          event.preventDefault();
+          processClick(cell);
+        }
+        break;
+      default:
+        return;
+    }
+  }
+
+  private handleCellKeyEvent(event: KeyboardEvent) {
+    const cell = this.getCellForUiEvent(event);
+    if (!cell) {
+      return;
+    }
+    let {x, y} = cell.position;
     const {width, height} = this.board.getView();
     let refocus = false;
 
@@ -472,6 +506,7 @@ class MinesweeperUi implements EncodeBoardIdListener {
 
     const cellListener = (c: Cell, e: CellEvent) => this.handleCellEvent(c, e);
     const mouseListener = (e: MouseEvent) => this.handleCellMouseEvent(e);
+    const touchListener = (e: TouchEvent) => this.handleCellTouchEvent(e);
     const keyListener = (e: KeyboardEvent) => this.handleCellKeyEvent(e);
 
     for (let y = 0; y < h; y++) {
@@ -491,6 +526,8 @@ class MinesweeperUi implements EncodeBoardIdListener {
         elem.addEventListener('mouseup', mouseListener);
         elem.addEventListener('mouseenter', mouseListener);
         elem.addEventListener('mouseleave', mouseListener);
+        elem.addEventListener('touchstart', touchListener);
+        elem.addEventListener('touchend', touchListener);
         elem.addEventListener('keydown', keyListener);
         this.mineFieldBoard.appendChild(elem);
       }
@@ -589,6 +626,25 @@ class MinesweeperUi implements EncodeBoardIdListener {
       }
     }
     return {width, height, mines, openingConfig};
+  }
+
+  private getCellForUiEvent(
+    event: MouseEvent | KeyboardEvent | TouchEvent,
+  ): Cell | undefined {
+    if (event.defaultPrevented) return undefined;
+
+    if (this.board.isExploded() || this.board.isComplete()) {
+      // no more action until game is reset
+      return undefined;
+    }
+    if (event.altKey || event.shiftKey || event.ctrlKey || event.metaKey) {
+      // don't handle any of the modified keys
+      return undefined;
+    }
+
+    const position = getPosition(event.target);
+    const {x, y} = position ?? {x: 0, y: 0};
+    return this.board.getCell(x, y);
   }
 }
 
