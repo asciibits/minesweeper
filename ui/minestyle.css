@@ -105,19 +105,11 @@ body.dark {
 
 body {
   display: flex;
-  overflow: auto;
+  flex-wrap: wrap;
   background: rgb(var(--background-color));
   margin: 0;
   color: var(--text-color);
   font-family: 'Open Sans', sans-serif;
-}
-
-.minefield_wrapper {
-  display: flex;
-  flex-wrap: wrap;
-  width: 100%;
-  max-width: 100%;
-  justify-content: center;
 }
 
 .color_palette.radio_group {
@@ -237,10 +229,11 @@ input:active + .radio_group_item {
 }
 
 .board {
+  margin-top: 0.7rem;
+  margin-left: auto;
+  margin-right: auto;
   display: grid;
-  margin: 0.7rem;
   grid-template-columns: min-content;
-  overflow: scroll;
   background-color: #c6c6c6;
   border-width: 0.4rem;
   user-select: none;
@@ -609,4 +602,8 @@ input::-webkit-inner-spin-button {
 input[type='number'] {
   -moz-appearance: textfield;
   appearance: textfield;
+}
+
+.debug {
+  white-space: pre;
 }

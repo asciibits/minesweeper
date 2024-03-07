@@ -47,7 +47,8 @@ class MinesweeperUi implements EncodeBoardIdListener {
   private readonly boardIdWorker: BoardIdWorker;
 
   // the UI elements
-  private readonly boardMenu: HTMLFieldSetElement;
+  private readonly boardMenu: HTMLElement;
+  private readonly boardMenuPulldown: HTMLButtonElement;
   private readonly widthElement: HTMLInputElement;
   private readonly heightElement: HTMLInputElement;
   private readonly mineCountElement: HTMLInputElement;
@@ -59,11 +60,12 @@ class MinesweeperUi implements EncodeBoardIdListener {
   private readonly openingConfigElements: HTMLInputElement[];
   private readonly minesRemainingDisplay: DigitalDisplay;
   private readonly timerDisplay: DigitalDisplay;
+  private readonly debugElement: HTMLElement;
 
   // handler state
   private resetMouseDownButtons = 0;
   private cellMouseDownButtons = 0;
-  private touchStart?: Partial<Touch>;
+  private cellTouchStart?: Partial<Touch>;
 
   constructor(
     private readonly win: Window,
@@ -83,6 +85,7 @@ class MinesweeperUi implements EncodeBoardIdListener {
     // initialize the UI elements
     const elements = getDocumentElements(win);
     this.boardMenu = elements.boardMenu;
+    this.boardMenuPulldown = elements.boardMenuPulldown;
     this.widthElement = elements.widthElement;
     this.heightElement = elements.heightElement;
     this.mineCountElement = elements.mineCountElement;
@@ -96,15 +99,18 @@ class MinesweeperUi implements EncodeBoardIdListener {
       elements.minesRemainingElements,
     );
     this.timerDisplay = new DigitalDisplay(elements.timerElements);
+    this.debugElement = elements.debugElement;
 
     // set up the UI listeners
     this.boardMenu.addEventListener('change', e => this.handleMenuEvent(e));
     this.resetButton.addEventListener('click', () => this.rebuildMineField());
-    const resetHandler = (e: MouseEvent) => this.handleResetEvent(e);
-    this.resetHeader.addEventListener('mousedown', resetHandler);
-    this.resetHeader.addEventListener('mouseup', resetHandler);
-    this.resetHeader.addEventListener('mouseout', resetHandler);
-    this.resetHeader.addEventListener('mouseover', resetHandler);
+    const resetMouseHandler = (e: MouseEvent) => this.handleResetMouseEvent(e);
+    const resetTouchHandler = (e: TouchEvent) => this.handleResetTouchEvent(e);
+    this.resetHeader.addEventListener('mousedown', resetMouseHandler);
+    this.resetHeader.addEventListener('mouseup', resetMouseHandler);
+    this.resetHeader.addEventListener('mouseout', resetMouseHandler);
+    this.resetHeader.addEventListener('mouseover', resetMouseHandler);
+    this.resetHeader.addEventListener('touchend', resetTouchHandler);
 
     // perform the initial game build
     this.rebuildMineField(boardId, viewState, elapsedTime);
@@ -332,19 +338,22 @@ class MinesweeperUi implements EncodeBoardIdListener {
     const touches = event.touches.length ? event.touches : event.changedTouches;
     if (touches.length !== 1) {
       // only handle single press
-      this.touchStart = undefined;
+      this.cellTouchStart = undefined;
       return;
     }
     const touch = touches[0];
-    if (this.touchStart && touch.identifier !== this.touchStart.identifier) {
+    if (
+      this.cellTouchStart &&
+      touch.identifier !== this.cellTouchStart.identifier
+    ) {
       // different touch action - clear the start state
-      this.touchStart = undefined;
+      this.cellTouchStart = undefined;
     }
 
     switch (event.type) {
       case 'touchstart':
         const {identifier, screenX, screenY} = touch;
-        this.touchStart = {
+        this.cellTouchStart = {
           identifier,
           screenX,
           screenY,
@@ -352,7 +361,7 @@ class MinesweeperUi implements EncodeBoardIdListener {
         // allow default actions
         return;
       case 'touchend':
-        if (!this.touchStart) {
+        if (!this.cellTouchStart) {
           // no matching start for this end - nothing to do
           return undefined;
         }
@@ -363,15 +372,20 @@ class MinesweeperUi implements EncodeBoardIdListener {
           height: 0,
         };
         const scale = this.win.visualViewport?.scale ?? 1;
-        const dx = Math.abs(touch.screenX - (this.touchStart?.screenX ?? 0));
-        const dy = Math.abs(touch.screenY - (this.touchStart?.screenY ?? 0));
+        const dx = Math.abs(
+          touch.screenX - (this.cellTouchStart?.screenX ?? 0),
+        );
+        const dy = Math.abs(
+          touch.screenY - (this.cellTouchStart?.screenY ?? 0),
+        );
         console.log('Got touch: %o', {
           touch,
           scale,
-          touchStart: this.touchStart,
+          touchStart: this.cellTouchStart,
         });
         if (dx <= width * scale && dy <= height * scale) {
           // we have a legit touch!
+          this.hideMenu();
           if (event.cancelable) {
             event.preventDefault();
           }
@@ -446,7 +460,7 @@ class MinesweeperUi implements EncodeBoardIdListener {
     this.rebuildMineField();
   }
 
-  private handleResetEvent(e: MouseEvent) {
+  private handleResetMouseEvent(e: MouseEvent) {
     if (e.defaultPrevented) return;
     if (e.target !== this.resetHeader) {
       // ignore events happening on children - relies on css
@@ -454,42 +468,68 @@ class MinesweeperUi implements EncodeBoardIdListener {
       // their descendents.
       return;
     }
-    try {
-      switch (e.type) {
-        case 'mousedown':
-          this.resetMouseDownButtons = e.buttons;
-          if (this.resetMouseDownButtons & 1) {
-            this.resetButton.classList.add('pressed');
-          }
-          // allow the default action to percolate - this allows the reset
-          // button to get focus
-          return;
-        case 'mouseup':
-          // For touch screens, they never get the 'mousedown' event, so give
-          // them a chance to animate the button press
-          const releasedButtons = this.resetMouseDownButtons & ~e.buttons;
-          this.resetMouseDownButtons &= e.buttons;
-          if (releasedButtons & 1) {
-            this.resetButton.classList.add('pressed');
-            setTimeout(() => {
-              this.resetButton.classList.remove('pressed');
-              this.resetButton.click();
-            }, 0);
-          }
-          break;
-        case 'mouseover':
-          this.resetMouseDownButtons &= e.buttons;
-          if (this.resetMouseDownButtons & 1) {
-            this.resetButton.classList.add('pressed');
-          }
-          break;
-        case 'mouseout':
-          this.resetButton.classList.remove('pressed');
-          break;
-      }
-      e.preventDefault();
-    } catch (e) {
-      logError(e);
+    if (e.altKey || e.shiftKey || e.ctrlKey || e.metaKey) {
+      return;
+    }
+    switch (e.type) {
+      case 'mousedown':
+        this.resetMouseDownButtons = e.buttons;
+        if (this.resetMouseDownButtons & 1) {
+          this.resetButton.classList.add('pressed');
+        }
+        // allow the default action to percolate - this allows the reset
+        // button to get focus
+        return;
+      case 'mouseup':
+        // For touch screens, they never get the 'mousedown' event, so give
+        // them a chance to animate the button press
+        const releasedButtons = this.resetMouseDownButtons & ~e.buttons;
+        this.resetMouseDownButtons &= e.buttons;
+        if (releasedButtons & 1) {
+          this.resetButton.classList.add('pressed');
+          setTimeout(() => {
+            this.resetButton.classList.remove('pressed');
+            this.resetButton.click();
+          }, 0);
+        }
+        break;
+      case 'mouseover':
+        this.resetMouseDownButtons &= e.buttons;
+        if (this.resetMouseDownButtons & 1) {
+          this.resetButton.classList.add('pressed');
+        }
+        break;
+      case 'mouseout':
+        this.resetButton.classList.remove('pressed');
+        break;
+    }
+    e.preventDefault();
+  }
+
+  private handleResetTouchEvent(e: TouchEvent) {
+    if (e.defaultPrevented) return;
+    if (e.target !== this.resetHeader) {
+      return;
+    }
+    if (e.altKey || e.shiftKey || e.ctrlKey || e.metaKey) {
+      return;
+    }
+    const touches = e.touches.length ? e.touches : e.changedTouches;
+    if (touches.length !== 1) {
+      return;
+    }
+    switch (e.type) {
+      case 'touchend':
+        if (e.cancelable) {
+          // this event is still up for grabs
+          this.resetButton.classList.add('pressed');
+          setTimeout(() => {
+            this.resetButton.classList.remove('pressed');
+            this.resetButton.click();
+          }, 0);
+          this.hideMenu();
+          e.preventDefault();
+        }
     }
   }
 
@@ -648,6 +688,18 @@ class MinesweeperUi implements EncodeBoardIdListener {
     const {x, y} = position ?? {x: 0, y: 0};
     return this.board.getCell(x, y);
   }
+
+  private hideMenu() {
+    if (this.boardMenu.contains(this.win.document.activeElement)) {
+      // hide the menu
+      (this.win.document.activeElement as HTMLElement)?.blur();
+    }
+  }
+
+  private logError(e: unknown) {
+    console.log(e);
+    this.debugElement.innerHTML += JSON.stringify(e);
+  }
 }
 
 function processClick(cell: Cell) {
@@ -718,10 +770,6 @@ class DigitalDisplay {
   }
 }
 
-function logError(e: unknown) {
-  console.log(e);
-}
-
 function initBoardIdWorker(win: Window, board: MineBoard) {
   const boardIdWorker = new BoardIdWorker();
 
@@ -746,9 +794,10 @@ function initBoardIdWorker(win: Window, board: MineBoard) {
 }
 
 function getDocumentElements(win: Window) {
-  const boardMenu = win.document.getElementById(
-    'board_menu',
-  ) as HTMLFieldSetElement;
+  const boardMenu = win.document.getElementById('board_menu') as HTMLElement;
+  const boardMenuPulldown = win.document.getElementById(
+    'board_menu_pulldown',
+  ) as HTMLButtonElement;
 
   const widthElement = win.document.getElementById('width') as HTMLInputElement;
   const heightElement = win.document.getElementById(
@@ -779,9 +828,13 @@ function getDocumentElements(win: Window) {
   const timerElements = [1, 2, 3].map(i =>
     win.document.getElementById('timer_' + i),
   ) as HTMLElement[];
+  const debugElement = win.document.getElementById(
+    'debug_element',
+  ) as HTMLElement;
 
   return {
     boardMenu,
+    boardMenuPulldown,
     widthElement,
     heightElement,
     mineCountElement,
@@ -793,5 +846,6 @@ function getDocumentElements(win: Window) {
     openingConfigElements,
     minesRemainingElements,
     timerElements,
+    debugElement,
   };
 }
