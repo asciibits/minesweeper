@@ -53,9 +53,9 @@ class MinesweeperUi implements EncodeBoardIdListener {
   private readonly widthElement: HTMLInputElement;
   private readonly heightElement: HTMLInputElement;
   private readonly mineCountElement: HTMLInputElement;
-  private readonly expertPreset: HTMLInputElement;
-  private readonly intermediatePreset: HTMLInputElement;
-  private readonly beginnerPreset: HTMLInputElement;
+  private readonly expertPreset: HTMLButtonElement;
+  private readonly intermediatePreset: HTMLButtonElement;
+  private readonly beginnerPreset: HTMLButtonElement;
   private readonly noMineElement: HTMLInputElement;
   private readonly openAreaElement: HTMLInputElement;
   private readonly minePossibleElement: HTMLInputElement;
@@ -71,10 +71,13 @@ class MinesweeperUi implements EncodeBoardIdListener {
   private readonly timerDisplay: DigitalDisplay;
   private readonly debugElement: HTMLElement;
 
+  private readonly menuItems: HTMLElement[][];
+
   // handler state
   private resetMouseDownButtons = 0;
   private cellMouseDownButtons = 0;
   private cellTouchStart?: Partial<Touch>;
+  private previousActiveCell?: HTMLButtonElement;
 
   constructor(
     private readonly win: Window,
@@ -119,25 +122,33 @@ class MinesweeperUi implements EncodeBoardIdListener {
     this.timerDisplay = new DigitalDisplay(elements.timerElements);
     this.debugElement = elements.debugElement;
 
-    // set up the UI listeners
-    this.boardMenu.addEventListener('change', e => this.handleMenuEvent(e));
-    this.boardMenu.addEventListener('keydown', e => this.handleMenuKeyEvent(e));
-    this.expertPreset.addEventListener('click', () =>
-      this.handlePresetClickEvent(30, 16, 99),
-    );
-    this.intermediatePreset.addEventListener('click', () =>
-      this.handlePresetClickEvent(16, 16, 40),
-    );
-    this.beginnerPreset.addEventListener('click', () =>
-      this.handlePresetClickEvent(9, 9, 10),
-    );
-    [this.widthElement, this.heightElement, this.mineCountElement].forEach(e =>
-      e.addEventListener('change', () => this.highlightActivePreset()),
-    );
-    this.noMineElement.addEventListener('change', () => this.saveState());
-    this.openAreaElement.addEventListener('change', () => this.saveState());
-    this.minePossibleElement.addEventListener('change', () => this.saveState());
+    this.menuItems = [
+      [this.expertPreset, this.intermediatePreset, this.beginnerPreset],
+      [this.widthElement],
+      [this.heightElement],
+      [this.mineCountElement],
+      [this.noMineElement, this.openAreaElement, this.minePossibleElement],
+    ];
 
+    // set up the UI listeners
+
+    // Menu related listeners
+    this.boardMenu.addEventListener('change', e =>
+      this.handleMenuChangeEvent(e),
+    );
+    this.boardMenu.addEventListener('keydown', e => this.handleMenuKeyEvent(e));
+    this.boardMenu.addEventListener('focusin', e =>
+      this.handleMenuFocusEvent(e),
+    );
+    this.boardMenu.addEventListener('click', e => this.handleMenuClickEvent(e));
+    this.boardMenuPulldown.addEventListener('pointerdown', e =>
+      this.handleMenuToggleEvent(e),
+    );
+    this.win.addEventListener('pointerdown', e => this.handleMenuCloseEvent(e));
+    this.win.addEventListener('keydown', e => this.handleMenuCloseEvent(e));
+    this.win.addEventListener('focusin', e => this.handleMenuCloseEvent(e));
+
+    // reset related listeners
     this.resetButton.addEventListener('click', () => this.rebuildMineField());
     const resetMouseHandler = (e: MouseEvent) => this.handleResetMouseEvent(e);
     const resetTouchHandler = (e: TouchEvent) => this.handleResetTouchEvent(e);
@@ -153,21 +164,11 @@ class MinesweeperUi implements EncodeBoardIdListener {
     ) as ConfigState | null;
     this.setSettings(settings);
 
+    // apply the tabindex for the menu
+    (this.getActiveBoardPreset() ?? this.widthElement).tabIndex = 0;
+
     // perform the initial game build
     this.rebuildMineField(boardId, viewState, elapsedTime);
-  }
-
-  private requestBoardEncode(attributes?: Record<string, unknown>) {
-    if (!attributes?.['DECODING'] && !attributes?.['EXPOSING']) {
-      this.boardIdWorker.requestEncode(this.board);
-    }
-  }
-
-  private updateMinesRemaining() {
-    this.minesRemainingDisplay.setValue(this.board.getMinesRemaining());
-  }
-  private updateTimer() {
-    this.timerDisplay.setValue(this.board.getTimeElapsed() / 1000);
   }
 
   private handleBoardEvent(e: BoardEvent) {
@@ -256,7 +257,7 @@ class MinesweeperUi implements EncodeBoardIdListener {
   }
 
   private handleCellEvent(cell: Cell, event: CellEvent) {
-    const elem = cell.getAttribute('element') as HTMLButtonElement;
+    const elem = getCellElement(cell);
     if (!elem) {
       return;
     }
@@ -342,7 +343,7 @@ class MinesweeperUi implements EncodeBoardIdListener {
           cell.pressCellOrChord();
         } else if (event.buttons & 2) {
           // right-click - Either flag if unopened, or chord
-          processFlag(cell);
+          this.processFlag(cell);
         }
         // don't prevent default on mouse-down. This allows the 'click' event
         // to fire, which handles focus properly
@@ -352,7 +353,7 @@ class MinesweeperUi implements EncodeBoardIdListener {
         this.cellMouseDownButtons &= event.buttons;
         cell.pressCellOrChord(false);
         if (releasedButtons & 1) {
-          processClick(cell);
+          this.processClick(cell);
         }
         break;
       case 'mouseenter':
@@ -407,7 +408,7 @@ class MinesweeperUi implements EncodeBoardIdListener {
           return undefined;
         }
         // get the width of one square
-        const cellElement = cell.getAttribute('element') as HTMLElement;
+        const cellElement = getCellElement(cell);
         const {width, height} = cellElement?.getBoundingClientRect?.() ?? {
           width: 0,
           height: 0,
@@ -426,11 +427,10 @@ class MinesweeperUi implements EncodeBoardIdListener {
         });
         if (dx <= width * scale && dy <= height * scale) {
           // we have a legit touch!
-          this.hideMenu();
           if (event.cancelable) {
             event.preventDefault();
           }
-          processClick(cell);
+          this.processClick(cell);
         }
         break;
       default:
@@ -468,10 +468,10 @@ class MinesweeperUi implements EncodeBoardIdListener {
       case ' ':
         // capture space so we handle the click on 'keydown' rather than
         // 'keypressed' - it seems more agile in a game environment
-        processClick(cell);
+        this.processClick(cell);
         break;
       case 'f':
-        processFlag(cell);
+        this.processFlag(cell);
         break;
       case 'Escape':
         // move focus to the reset button
@@ -483,30 +483,187 @@ class MinesweeperUi implements EncodeBoardIdListener {
     }
     event.preventDefault();
     if (refocus) {
-      (
-        this.board
-          .getCell((x + width) % width, (y + height) % height)
-          ?.getAttribute('element') as HTMLButtonElement
-      )?.focus();
+      const cell = this.board.getCell(
+        (x + width) % width,
+        (y + height) % height,
+      );
+      const cellElement = getCellElement(cell);
+      if (this.previousActiveCell) {
+        this.previousActiveCell.tabIndex = -1;
+      }
+      this.previousActiveCell = cellElement;
+      cellElement.tabIndex = 0;
+      cellElement.focus();
     }
   }
 
-  private handleMenuEvent(e: Event) {
+  private handleMenuChangeEvent(e: Event) {
     if (e.defaultPrevented) return;
     if (this.board.isStarted()) {
       // don't make changes to an in-progress game
       return;
     }
-    e.preventDefault();
+    console.log('Change Event: %o', e);
+
+    switch (e.target) {
+      case this.widthElement:
+      case this.heightElement:
+      case this.mineCountElement:
+        this.highlightActivePreset();
+        break;
+    }
+    this.saveState();
     this.rebuildMineField();
+    e.preventDefault();
+  }
+
+  private handleMenuFocusEvent(e: FocusEvent) {
+    if (e.defaultPrevented) return;
+    switch (e.type) {
+      case 'focusin':
+        this.showMenu();
+        if (e.target !== this.boardMenuPulldown) {
+          this.boardMenu
+            .querySelectorAll('[tabindex="0"]')
+            .forEach(el => ((el as HTMLElement).tabIndex = -1));
+          (e.target as HTMLElement).tabIndex = 0;
+        }
+        break;
+    }
   }
 
   private handleMenuKeyEvent(e: KeyboardEvent) {
     if (e.defaultPrevented) return;
-    if (e.code === 'Escape') {
-      (window.document.activeElement as HTMLElement)?.blur?.();
+    if (e.altKey || e.ctrlKey || e.shiftKey || e.metaKey) return;
+
+    const el = e.target as HTMLElement;
+    const activeIdx = this.menuItems
+      .map((g, i) => [i, g.indexOf(el)])
+      .find(r => r[1] >= 0) as [number, number];
+    const group = this.menuItems[activeIdx[0]];
+
+    const moveFocus = (dx: number, dy: number) => {
+      // remove the old active element from tab ordering
+      const group =
+        this.menuItems[
+          ((activeIdx?.[0] ?? -1) + dy + this.menuItems.length) %
+            this.menuItems.length
+        ];
+      const groupActiveIdx =
+        dy === 0
+          ? activeIdx[1]
+          : group.findIndex(
+              e =>
+                e.classList.contains('active') ||
+                (e as HTMLInputElement).checked,
+            );
+
+      const activeElement =
+        group[(groupActiveIdx + dx + group.length) % group.length];
+      activeElement.focus();
+    };
+
+    switch (e.code) {
+      case 'Escape':
+        this.hideMenu();
+        break;
+      case 'ArrowDown':
+        moveFocus(0, 1);
+        break;
+      case 'ArrowUp':
+        moveFocus(0, -1);
+        break;
+      case 'ArrowLeft':
+        if (group.length > 1) {
+          moveFocus(-1, 0);
+        } else {
+          // let component handle it
+          return;
+        }
+        break;
+      case 'ArrowRight':
+        if (group.length > 1) {
+          moveFocus(1, 0);
+        } else {
+          // let component handle it
+          return;
+        }
+        break;
+      default:
+        return;
+    }
+    e.preventDefault();
+  }
+
+  private handleMenuCloseEvent(e: Event) {
+    if (e.defaultPrevented) return;
+    if (
+      !this.boardMenu.contains(e.target as Node) &&
+      e.target !== this.boardMenuPulldown &&
+      this.isMenuVisible()
+    ) {
+      this.hideMenu();
+    }
+  }
+
+  private handleMenuClickEvent(e: Event) {
+    if (e.defaultPrevented) return;
+    switch (e.target) {
+      case this.expertPreset:
+        if (this.updateMenuDimensions(30, 16, 99)) {
+          this.boardMenu.dispatchEvent(new Event('change'));
+        }
+        break;
+      case this.intermediatePreset:
+        if (this.updateMenuDimensions(16, 16, 40)) {
+          this.boardMenu.dispatchEvent(new Event('change'));
+        }
+        break;
+      case this.beginnerPreset:
+        if (this.updateMenuDimensions(9, 9, 10)) {
+          this.boardMenu.dispatchEvent(new Event('change'));
+        }
+        break;
+      case this.boardMenuPulldown:
+        if (this.isMenuVisible()) {
+          this.hideMenu();
+        } else {
+          this.showMenu();
+        }
+        break;
+      default:
+        return;
+    }
+    e.preventDefault();
+  }
+
+  private handleMenuToggleEvent(e: PointerEvent) {
+    if (e.defaultPrevented) return;
+    if (e.altKey || e.ctrlKey || e.shiftKey || e.metaKey) return;
+
+    if (this.isMenuVisible()) {
+      this.hideMenu();
+    } else {
+      this.showMenu();
+    }
+    if (e.cancelable) {
       e.preventDefault();
     }
+  }
+
+  private hideMenu() {
+    this.boardMenu.classList.remove('active');
+  }
+
+  private showMenu() {
+    this.boardMenu.classList.add('active');
+    if (this.win.document.activeElement === this.boardMenuPulldown) {
+      (this.boardMenu.querySelector('[tabindex="0"]') as HTMLElement)?.focus();
+    }
+  }
+
+  private isMenuVisible() {
+    return this.boardMenu.classList.contains('active');
   }
 
   private handleResetMouseEvent(e: MouseEvent) {
@@ -576,15 +733,9 @@ class MinesweeperUi implements EncodeBoardIdListener {
             this.resetButton.classList.remove('pressed');
             this.resetButton.click();
           }, 0);
-          this.hideMenu();
           e.preventDefault();
         }
     }
-  }
-
-  /** Handle an asyncronous 'encode board id' response */
-  handleEncodeResponse(encodedBoardState: EncodedBoardState) {
-    this.updateBoardId(encodedBoardState);
   }
 
   /**
@@ -603,6 +754,7 @@ class MinesweeperUi implements EncodeBoardIdListener {
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {
         const elem = document.createElement('button');
+        elem.tabIndex = -1;
         elem.classList.add('cell');
         elem.classList.add('closed');
         elem.style.setProperty('grid-row', String(y + 1));
@@ -623,6 +775,9 @@ class MinesweeperUi implements EncodeBoardIdListener {
         this.mineFieldBoard.appendChild(elem);
       }
     }
+    this.previousActiveCell = this.mineFieldBoard
+      .firstElementChild as HTMLButtonElement;
+    this.previousActiveCell.tabIndex = 0;
   }
 
   /** Update the URL parameters for a new board id */
@@ -736,16 +891,6 @@ class MinesweeperUi implements EncodeBoardIdListener {
     return changed;
   }
 
-  private handlePresetClickEvent(
-    width: number,
-    height: number,
-    mineCount: number,
-  ) {
-    if (this.updateMenuDimensions(width, height, mineCount)) {
-      this.boardMenu.dispatchEvent(new Event('change'));
-    }
-  }
-
   private highlightActivePreset() {
     const {width, height, mines} = this.getBoardConfig();
     let activeButton: HTMLElement | undefined = undefined;
@@ -785,20 +930,17 @@ class MinesweeperUi implements EncodeBoardIdListener {
     switch (configState?.colorPalette) {
       case 'DARK':
         if (!this.darkColor.checked) {
-          this.darkColor.checked = true;
-          this.darkColor.dispatchEvent(new Event('click'));
+          this.darkColor.click();
         }
         break;
       case 'LIGHT':
         if (!this.lightColor.checked) {
-          this.lightColor.checked = true;
-          this.lightColor.dispatchEvent(new Event('click'));
+          this.lightColor.click();
         }
         break;
       default: // 'SYSTEM'
         if (!this.systemColor.checked) {
-          this.systemColor.checked = true;
-          this.systemColor.dispatchEvent(new Event('click'));
+          this.systemColor.click();
         }
         break;
     }
@@ -846,34 +988,63 @@ class MinesweeperUi implements EncodeBoardIdListener {
     return this.board.getCell(x, y);
   }
 
-  private hideMenu() {
-    if (this.boardMenu.contains(this.win.document.activeElement)) {
-      // hide the menu
-      (this.win.document.activeElement as HTMLElement)?.blur();
+  /** Handle an asyncronous 'encode board id' response */
+  handleEncodeResponse(encodedBoardState: EncodedBoardState) {
+    this.updateBoardId(encodedBoardState);
+  }
+
+  private requestBoardEncode(attributes?: Record<string, unknown>) {
+    if (!attributes?.['DECODING'] && !attributes?.['EXPOSING']) {
+      this.boardIdWorker.requestEncode(this.board);
     }
+  }
+
+  private updateMinesRemaining() {
+    this.minesRemainingDisplay.setValue(this.board.getMinesRemaining());
+  }
+  private updateTimer() {
+    this.timerDisplay.setValue(this.board.getTimeElapsed() / 1000);
+  }
+
+  private processClick(cell: Cell) {
+    if (this.previousActiveCell) {
+      this.previousActiveCell.tabIndex = -1;
+    }
+    this.previousActiveCell = getCellElement(cell);
+    this.previousActiveCell.tabIndex = 0;
+    if (cell.isOpened()) {
+      cell.chord();
+    } else if (!cell.isFlagged()) {
+      cell.open();
+    }
+  }
+
+  private processFlag(cell: Cell) {
+    if (this.previousActiveCell) {
+      this.previousActiveCell.tabIndex = -1;
+    }
+    this.previousActiveCell = getCellElement(cell);
+    this.previousActiveCell.tabIndex = 0;
+    if (cell.isOpened()) {
+      // using the 'flag' button to open a chord is non-standard, but very
+      // handy. I should make it an option
+      cell.chord();
+    } else {
+      cell.flag(!cell.isFlagged());
+    }
+  }
+
+  private getActiveBoardPreset(): HTMLButtonElement | undefined {
+    return [
+      this.expertPreset,
+      this.intermediatePreset,
+      this.beginnerPreset,
+    ].find(e => e.classList.contains('active'));
   }
 
   private logError(e: unknown) {
     console.log(e);
-    this.debugElement.innerHTML += JSON.stringify(e);
-  }
-}
-
-function processClick(cell: Cell) {
-  if (cell.isOpened()) {
-    cell.chord();
-  } else if (!cell.isFlagged()) {
-    cell.open();
-  }
-}
-
-function processFlag(cell: Cell) {
-  if (cell.isOpened()) {
-    // using the 'flag' button to open a chord is non-standard, but very handy.
-    // I should make it an option
-    cell.chord();
-  } else {
-    cell.flag(!cell.isFlagged());
+    this.debugElement.innerHTML += JSON.stringify(e) + '\n';
   }
 }
 
@@ -889,6 +1060,10 @@ function getPosition(cell: unknown): Position | null {
     }
   }
   return null;
+}
+
+function getCellElement(cell: Cell): HTMLButtonElement {
+  return cell.getAttribute('element') as HTMLButtonElement;
 }
 
 interface ConfigState {
@@ -976,13 +1151,13 @@ function getDocumentElements(win: Window) {
   ) as HTMLInputElement;
   const expertPreset = window.document.getElementById(
     'expert_preset',
-  ) as HTMLInputElement;
+  ) as HTMLButtonElement;
   const intermediatePreset = window.document.getElementById(
     'intermediate_preset',
-  ) as HTMLInputElement;
+  ) as HTMLButtonElement;
   const beginnerPreset = window.document.getElementById(
     'beginner_preset',
-  ) as HTMLInputElement;
+  ) as HTMLButtonElement;
   const noMineElement = window.document.getElementById(
     'no_mine',
   ) as HTMLInputElement;

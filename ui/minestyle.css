@@ -187,7 +187,7 @@ input:active + .radio_group_item .color_palette_item,
   white-space: nowrap;
 }
 
-input.persistent_button,
+.persistent_button,
 .radio_group_item {
   display: block;
   border: 0.1rem var(--text-subdued) solid;
@@ -204,10 +204,10 @@ input.persistent_button,
   min-width: 0;
 }
 
-input.persistent_button:active,
-input.persistent_button:focus,
-input.persistent_button:hover,
-input.persistent_button.active,
+.persistent_button:active,
+.persistent_button:focus,
+.persistent_button:hover,
+.persistent_button.active,
 .radio_group_item:hover,
 input:focus + .radio_group_item,
 input:checked + .radio_group_item,
@@ -216,13 +216,13 @@ input:active + .radio_group_item {
   border-color: var(--text-highlight);
 }
 
-input.persistent_button:focus-visible,
+.persistent_button:focus-visible,
 input:focus-visible + .radio_group_item {
   text-decoration: underline;
 }
 
-input.persistent_button:active,
-input.persistent_button.active,
+.persistent_button:active,
+.persistent_button.active,
 input:checked + .radio_group_item,
 input:active + .radio_group_item {
   background-color: var(--select-color);
@@ -275,7 +275,6 @@ fieldset legend {
   position: relative;
   max-height: 0;
   overflow: hidden;
-  visibility: hidden;
   padding: 0 0.5rem;
   background-color: rgba(var(--background-color), 0.8);
   box-shadow: var(--text-color) 0.1rem 0.1rem 0.2rem;
@@ -286,7 +285,7 @@ fieldset legend {
   transition: all 0.25s;
 }
 
-.board_menu:focus-within .board_menu_content {
+.board_menu.active .board_menu_content {
   padding: 0.5rem;
   visibility: visible;
   max-height: 30rem;
@@ -300,12 +299,12 @@ fieldset legend {
   box-shadow: var(--text-color) 0.1rem 0.1rem 0.2rem;
   transition: all 0.2s;
 }
-.board_menu:focus-within .board_menu_pulldown_wrapper,
-.board_menu:not(:focus-within) .board_menu_pulldown_wrapper:hover {
+.board_menu.active .board_menu_pulldown_wrapper,
+.board_menu:not(.active) .board_menu_pulldown_wrapper:hover {
   background-color: rgba(var(--background-color), 0.8);
 }
-.board_menu:focus-within .board_menu_pulldown_wrapper,
-.board_menu:not(:focus-within) .board_menu_pulldown_wrapper:hover {
+.board_menu.active .board_menu_pulldown_wrapper,
+.board_menu:not(.active) .board_menu_pulldown_wrapper:hover {
   width: 1.8rem;
   height: 1.8rem;
 }
@@ -324,7 +323,7 @@ fieldset legend {
   background-color: var(--text-highlight);
 }
 
-.board_menu:focus-within .board_menu_pulldown {
+.board_menu.active .board_menu_pulldown {
   /* mask-image: url('./chevron-up-square.svg'); */
   mask-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCI+PHBhdGggZD0iTTUgMjFoMTRjMS4xMDMgMCAyLS44OTcgMi0yVjVjMC0xLjEwMy0uODk3LTItMi0ySDVjLTEuMTAzIDAtMiAuODk3LTIgMnYxNGMwIDEuMTAzLjg5NyAyIDIgMnpNNSA1aDE0bC4wMDEgMTRINVY1eiIvPjxwYXRoIGQ9Ik02LjI5MyAxMy4yOTNsMS40MTQgMS40MTRMMTIgMTAuNDE0bDQuMjkzIDQuMjkzIDEuNDE0LTEuNDE0TDEyIDcuNTg2eiIvPjwvc3ZnPg==);
 }
@@ -608,6 +607,6 @@ input[type='number'] {
   appearance: textfield;
 }
 
-.debug {
+#debug_element {
   white-space: pre;
 }

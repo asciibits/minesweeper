@@ -14,38 +14,53 @@
         </div>
         <fieldset class="board_config">
           <legend>Board Configuration</legend>
-          <input
-            type="button"
+          <button
             class="persistent_button"
             id="expert_preset"
-            value="Expert"
             title="Expert game: 30x16 grid, 99 mines"
-          />
-          <input
-            type="button"
+            tabindex="-1">Expert</button>
+          <button
             class="persistent_button"
             id="intermediate_preset"
-            value="Intermediate"
             title="Intermediate game: 16x16 grid, 40 mines"
-          />
-          <input
-            type="button"
+            tabindex="-1">Intermediate</button>
+          <button
             class="persistent_button"
             id="beginner_preset"
-            value="Beginner"
             title="Beginner game: 9x9 grid, 10 mines"
-          />
-          <fieldset class="labeled_input">
+            tabindex="-1">Beginner</button>
+          <fieldset class="labeled_input" role="presentation">
             <legend>width</legend>
-            <input type="number" id="width" size="4" min="1" max="999999" />
+            <input
+              type="number"
+              id="width"
+              size="4"
+              min="1"
+              max="999999"
+              tabindex="-1"
+            />
           </fieldset>
-          <fieldset class="labeled_input">
+          <fieldset class="labeled_input" role="presentation">
             <legend>height</legend>
-            <input type="number" id="height" size="4" min="1" max="999999" />
+            <input
+              type="number"
+              id="height"
+              size="4"
+              min="1"
+              max="999999"
+              tabindex="-1"
+            />
           </fieldset>
-          <fieldset class="labeled_input">
+          <fieldset class="labeled_input" role="presentation">
             <legend>mines</legend>
-            <input type="number" id="mines" size="4" min="1" max="999999" />
+            <input
+              type="number"
+              id="mines"
+              size="4"
+              min="1"
+              max="999999"
+              tabindex="-1"
+            />
           </fieldset>
         </fieldset>
         <fieldset class="opening_style">
@@ -56,6 +71,7 @@
               type="radio"
               name="initial_click"
               value="NO_MINE"
+              tabindex="-1"
             />
             <label
               for="no_mine"
@@ -71,6 +87,7 @@
               type="radio"
               name="initial_click"
               value="ZERO"
+              tabindex="-1"
             />
             <label
               for="open_area"
@@ -86,6 +103,7 @@
               type="radio"
               name="initial_click"
               value="ANY"
+              tabindex="-1"
             />
             <label
               for="mine_possible"
@@ -98,7 +116,11 @@
         </fieldset>
       </div>
       <div class="board_menu_pulldown_wrapper">
-        <button id="board_menu_pulldown" class="board_menu_pulldown"></button>
+        <button
+          id="board_menu_pulldown"
+          class="board_menu_pulldown"
+          tabindex="-1"
+        ></button>
       </div>
     </div>
     <span class="color_palette radio_group">
@@ -150,7 +172,9 @@
           </div>
         </div>
         <div class="header_part center_justify">
-          <button id="reset" class="border_out">😀</button>
+          <button id="reset" class="border_out" autofocus="autofocus">
+            😀
+          </button>
         </div>
         <div class="header_part right_justify">
           <div id="timer" class="digital_display border_in">
