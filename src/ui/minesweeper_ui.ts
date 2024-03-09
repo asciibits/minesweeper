@@ -48,8 +48,6 @@ class MinesweeperUi implements EncodeBoardIdListener {
 
   // the UI elements
   private readonly bodyElement: HTMLBodyElement;
-  private readonly boardMenu: HTMLElement;
-  private readonly boardMenuPulldown: HTMLButtonElement;
   private readonly widthElement: HTMLInputElement;
   private readonly heightElement: HTMLInputElement;
   private readonly mineCountElement: HTMLInputElement;
@@ -71,7 +69,7 @@ class MinesweeperUi implements EncodeBoardIdListener {
   private readonly timerDisplay: DigitalDisplay;
   private readonly debugElement: HTMLElement;
 
-  private readonly menuItems: HTMLElement[][];
+  private readonly boardConfigMenu: Menu;
 
   // handler state
   private resetMouseDownButtons = 0;
@@ -97,8 +95,6 @@ class MinesweeperUi implements EncodeBoardIdListener {
     // initialize the UI elements
     const elements = getDocumentElements(win);
     this.bodyElement = elements.bodyElement;
-    this.boardMenu = elements.boardMenu;
-    this.boardMenuPulldown = elements.boardMenuPulldown;
     this.widthElement = elements.widthElement;
     this.heightElement = elements.heightElement;
     this.mineCountElement = elements.mineCountElement;
@@ -122,31 +118,29 @@ class MinesweeperUi implements EncodeBoardIdListener {
     this.timerDisplay = new DigitalDisplay(elements.timerElements);
     this.debugElement = elements.debugElement;
 
-    this.menuItems = [
-      [this.expertPreset, this.intermediatePreset, this.beginnerPreset],
-      [this.widthElement],
-      [this.heightElement],
-      [this.mineCountElement],
-      [this.noMineElement, this.openAreaElement, this.minePossibleElement],
-    ];
-
     // set up the UI listeners
 
     // Menu related listeners
-    this.boardMenu.addEventListener('change', e =>
-      this.handleMenuChangeEvent(e),
-    );
-    this.boardMenu.addEventListener('keydown', e => this.handleMenuKeyEvent(e));
-    this.boardMenu.addEventListener('focusin', e =>
-      this.handleMenuFocusEvent(e),
-    );
-    this.boardMenu.addEventListener('click', e => this.handleMenuClickEvent(e));
-    this.boardMenuPulldown.addEventListener('pointerdown', e =>
-      this.handleMenuToggleEvent(e),
-    );
-    this.win.addEventListener('pointerdown', e => this.handleMenuCloseEvent(e));
-    this.win.addEventListener('keydown', e => this.handleMenuCloseEvent(e));
-    this.win.addEventListener('focusin', e => this.handleMenuCloseEvent(e));
+    const configChangeHandler = (e: Event) => this.handleConfigChangeEvent(e);
+    for (const el of [
+      this.widthElement,
+      this.heightElement,
+      this.mineCountElement,
+      this.noMineElement,
+      this.openAreaElement,
+      this.minePossibleElement,
+    ]) {
+      el.addEventListener('change', configChangeHandler);
+    }
+    const presetClickHandler = (e: Event) => this.handlePresetClickEvent(e);
+    this.expertPreset.addEventListener('click', presetClickHandler);
+    this.intermediatePreset.addEventListener('click', presetClickHandler);
+    this.beginnerPreset.addEventListener('click', presetClickHandler);
+    const colorPaletteChangeHandler = (e: Event) =>
+      this.handleColorPaletteEvent(e);
+    this.systemColor.addEventListener('change', colorPaletteChangeHandler);
+    this.lightColor.addEventListener('change', colorPaletteChangeHandler);
+    this.darkColor.addEventListener('change', colorPaletteChangeHandler);
 
     // reset related listeners
     this.resetButton.addEventListener('click', () => this.rebuildMineField());
@@ -164,8 +158,10 @@ class MinesweeperUi implements EncodeBoardIdListener {
     ) as ConfigState | null;
     this.setSettings(settings);
 
-    // apply the tabindex for the menu
-    (this.getActiveBoardPreset() ?? this.widthElement).tabIndex = 0;
+    // initialize the tabIndex for the menus
+    this.boardConfigMenu = elements.boardConfigMenu;
+    elements.boardConfigMenu.ensureState();
+    elements.settingsMenu.ensureState();
 
     // perform the initial game build
     this.rebuildMineField(boardId, viewState, elapsedTime);
@@ -497,138 +493,46 @@ class MinesweeperUi implements EncodeBoardIdListener {
     }
   }
 
-  private handleMenuChangeEvent(e: Event) {
+  private handleConfigChangeEvent(e: Event) {
     if (e.defaultPrevented) return;
     if (this.board.isStarted()) {
       // don't make changes to an in-progress game
       return;
     }
-    console.log('Change Event: %o', e);
+
+    this.highlightActivePreset();
+    this.saveState();
 
     switch (e.target) {
       case this.widthElement:
       case this.heightElement:
       case this.mineCountElement:
-        this.highlightActivePreset();
+      case this.noMineElement:
+      case this.openAreaElement:
+      case this.minePossibleElement:
+        // rebuild when the layout of the game has changed
+        this.rebuildMineField();
         break;
-    }
-    this.saveState();
-    this.rebuildMineField();
-    e.preventDefault();
-  }
-
-  private handleMenuFocusEvent(e: FocusEvent) {
-    if (e.defaultPrevented) return;
-    switch (e.type) {
-      case 'focusin':
-        this.showMenu();
-        if (e.target !== this.boardMenuPulldown) {
-          this.boardMenu
-            .querySelectorAll('[tabindex="0"]')
-            .forEach(el => ((el as HTMLElement).tabIndex = -1));
-          (e.target as HTMLElement).tabIndex = 0;
-        }
-        break;
-    }
-  }
-
-  private handleMenuKeyEvent(e: KeyboardEvent) {
-    if (e.defaultPrevented) return;
-    if (e.altKey || e.ctrlKey || e.shiftKey || e.metaKey) return;
-
-    const el = e.target as HTMLElement;
-    const activeIdx = this.menuItems
-      .map((g, i) => [i, g.indexOf(el)])
-      .find(r => r[1] >= 0) as [number, number];
-    const group = this.menuItems[activeIdx[0]];
-
-    const moveFocus = (dx: number, dy: number) => {
-      // remove the old active element from tab ordering
-      const group =
-        this.menuItems[
-          ((activeIdx?.[0] ?? -1) + dy + this.menuItems.length) %
-            this.menuItems.length
-        ];
-      const groupActiveIdx =
-        dy === 0
-          ? activeIdx[1]
-          : group.findIndex(
-              e =>
-                e.classList.contains('active') ||
-                (e as HTMLInputElement).checked,
-            );
-
-      const activeElement =
-        group[(groupActiveIdx + dx + group.length) % group.length];
-      activeElement.focus();
-    };
-
-    switch (e.code) {
-      case 'Escape':
-        this.hideMenu();
-        break;
-      case 'ArrowDown':
-        moveFocus(0, 1);
-        break;
-      case 'ArrowUp':
-        moveFocus(0, -1);
-        break;
-      case 'ArrowLeft':
-        if (group.length > 1) {
-          moveFocus(-1, 0);
-        } else {
-          // let component handle it
-          return;
-        }
-        break;
-      case 'ArrowRight':
-        if (group.length > 1) {
-          moveFocus(1, 0);
-        } else {
-          // let component handle it
-          return;
-        }
-        break;
-      default:
-        return;
     }
     e.preventDefault();
   }
 
-  private handleMenuCloseEvent(e: Event) {
-    if (e.defaultPrevented) return;
-    if (
-      !this.boardMenu.contains(e.target as Node) &&
-      e.target !== this.boardMenuPulldown &&
-      this.isMenuVisible()
-    ) {
-      this.hideMenu();
-    }
-  }
-
-  private handleMenuClickEvent(e: Event) {
+  private handlePresetClickEvent(e: Event) {
     if (e.defaultPrevented) return;
     switch (e.target) {
       case this.expertPreset:
         if (this.updateMenuDimensions(30, 16, 99)) {
-          this.boardMenu.dispatchEvent(new Event('change'));
+          this.widthElement.dispatchEvent(new Event('change'));
         }
         break;
       case this.intermediatePreset:
         if (this.updateMenuDimensions(16, 16, 40)) {
-          this.boardMenu.dispatchEvent(new Event('change'));
+          this.widthElement.dispatchEvent(new Event('change'));
         }
         break;
       case this.beginnerPreset:
         if (this.updateMenuDimensions(9, 9, 10)) {
-          this.boardMenu.dispatchEvent(new Event('change'));
-        }
-        break;
-      case this.boardMenuPulldown:
-        if (this.isMenuVisible()) {
-          this.hideMenu();
-        } else {
-          this.showMenu();
+          this.widthElement.dispatchEvent(new Event('change'));
         }
         break;
       default:
@@ -637,33 +541,26 @@ class MinesweeperUi implements EncodeBoardIdListener {
     e.preventDefault();
   }
 
-  private handleMenuToggleEvent(e: PointerEvent) {
+  private handleColorPaletteEvent(e: Event) {
     if (e.defaultPrevented) return;
-    if (e.altKey || e.ctrlKey || e.shiftKey || e.metaKey) return;
-
-    if (this.isMenuVisible()) {
-      this.hideMenu();
-    } else {
-      this.showMenu();
+    switch (e.target) {
+      case this.systemColor:
+        this.bodyElement.classList.remove('light');
+        this.bodyElement.classList.remove('dark');
+        break;
+      case this.lightColor:
+        this.bodyElement.classList.add('light');
+        this.bodyElement.classList.remove('dark');
+        break;
+      case this.darkColor:
+        this.bodyElement.classList.remove('light');
+        this.bodyElement.classList.add('dark');
+        break;
+      default:
+        return;
     }
-    if (e.cancelable) {
-      e.preventDefault();
-    }
-  }
-
-  private hideMenu() {
-    this.boardMenu.classList.remove('active');
-  }
-
-  private showMenu() {
-    this.boardMenu.classList.add('active');
-    if (this.win.document.activeElement === this.boardMenuPulldown) {
-      (this.boardMenu.querySelector('[tabindex="0"]') as HTMLElement)?.focus();
-    }
-  }
-
-  private isMenuVisible() {
-    return this.boardMenu.classList.contains('active');
+    this.saveState();
+    e.preventDefault();
   }
 
   private handleResetMouseEvent(e: MouseEvent) {
@@ -887,7 +784,6 @@ class MinesweeperUi implements EncodeBoardIdListener {
       this.mineCountElement.valueAsNumber = mineCount;
     }
     this.highlightActivePreset();
-    this.saveState();
     return changed;
   }
 
@@ -1034,18 +930,25 @@ class MinesweeperUi implements EncodeBoardIdListener {
     }
   }
 
-  private getActiveBoardPreset(): HTMLButtonElement | undefined {
-    return [
-      this.expertPreset,
-      this.intermediatePreset,
-      this.beginnerPreset,
-    ].find(e => e.classList.contains('active'));
-  }
-
   private logError(e: unknown) {
     console.log(e);
     this.debugElement.innerHTML += JSON.stringify(e) + '\n';
   }
+}
+
+function hide(menu: HTMLElement) {
+  menu.classList.remove('active');
+}
+
+function show(menu: HTMLElement) {
+  menu.classList.add('active');
+  if (document.activeElement === menu.querySelector('.menu_pulldown')) {
+    (menu.querySelector('[tabindex="0"]') as HTMLElement)?.focus();
+  }
+}
+
+function isVisible(element: HTMLElement) {
+  return element.classList.contains('active');
 }
 
 function getPosition(cell: unknown): Position | null {
@@ -1110,6 +1013,187 @@ class DigitalDisplay {
   }
 }
 
+function isActive(el: HTMLElement) {
+  return el.classList.contains('active') || (el as HTMLInputElement).checked;
+}
+function getActiveIndex(group: HTMLElement[]): number {
+  return group.findIndex(isActive);
+}
+
+class Menu {
+  constructor(
+    private readonly menu: HTMLElement,
+    private readonly menuButton: HTMLButtonElement,
+    private readonly menuGroups: HTMLElement[][],
+  ) {
+    this.menu.addEventListener('keydown', e => this.handleKeyEvent(e));
+    this.menu.addEventListener('focusin', e => this.handleFocusEvent(e));
+    this.menu.addEventListener('focusout', e => this.handleFocusEvent(e));
+    this.menuButton.addEventListener('pointerdown', e =>
+      this.handleToggleEvent(e),
+    );
+    const win = this.menu.getRootNode() as HTMLElement;
+    win.addEventListener('pointerdown', e => this.handleCloseEvent(e));
+    win.addEventListener('keydown', e => this.handleCloseEvent(e));
+    win.addEventListener('focusin', e => this.handleCloseEvent(e));
+  }
+
+  private getGroupIndex(el: HTMLElement) {
+    return this.menuGroups
+      .map((g, i) => [i, g.indexOf(el)])
+      .find(r => r[1] >= 0) as [number, number];
+  }
+
+  private handleKeyEvent(e: KeyboardEvent) {
+    if (e.defaultPrevented) return;
+    if (e.altKey || e.ctrlKey || e.shiftKey || e.metaKey) return;
+
+    const el = e.target as HTMLElement;
+    const currentIdx = this.getGroupIndex(el);
+    const group = this.menuGroups[currentIdx[0]];
+
+    const moveFocus = (dx: number, dy: number) => {
+      const group =
+        this.menuGroups[
+          ((currentIdx?.[0] ?? -1) + dy + this.menuGroups.length) %
+            this.menuGroups.length
+        ];
+      const groupActiveIdx = dy === 0 ? currentIdx[1] : getActiveIndex(group);
+
+      const activeElement =
+        group[(groupActiveIdx + dx + group.length) % group.length];
+      activeElement.focus();
+      this.ensureState();
+    };
+
+    switch (e.code) {
+      case 'Escape':
+        hide(this.menu);
+        break;
+      case 'ArrowDown':
+        moveFocus(0, 1);
+        break;
+      case 'ArrowUp':
+        moveFocus(0, -1);
+        break;
+      case 'ArrowLeft':
+        if (group.length > 1) {
+          moveFocus(-1, 0);
+        } else {
+          // let component handle it
+          return;
+        }
+        break;
+      case 'ArrowRight':
+        if (group.length > 1) {
+          moveFocus(1, 0);
+        } else {
+          // let component handle it
+          return;
+        }
+        break;
+      default:
+        return;
+    }
+    e.preventDefault();
+  }
+  private handleFocusEvent(e: FocusEvent) {
+    if (e.defaultPrevented) return;
+    switch (e.type) {
+      case 'focusin':
+        show(this.menu);
+        this.ensureState();
+        break;
+      case 'focusout':
+        this.ensureState();
+        break;
+    }
+  }
+
+  ensureState() {
+    if (
+      this.menu.contains(document.activeElement) &&
+      document.activeElement !== this.menuButton
+    ) {
+      this.menuGroups.flatMap(g => g).forEach(e => (e.tabIndex = -1));
+      (document.activeElement as HTMLElement).tabIndex = 0;
+      return;
+    }
+
+    // make sure 1, and only 1 element has a tabIndex set
+    let group: HTMLElement[] | undefined = undefined;
+    let item: HTMLElement | undefined = undefined;
+
+    for (const menuGroup of this.menuGroups) {
+      for (const menuItem of menuGroup) {
+        if (menuItem.tabIndex === 0) {
+          if (group) {
+            console.warn('found multiple tabbable elements. Using first');
+            menuItem.tabIndex = -1;
+          } else {
+            group = menuGroup;
+            item = menuItem;
+          }
+        }
+      }
+    }
+    if (!group || !item) {
+      // this is expected when first loading the page
+      group = this.menuGroups[0];
+      item = group[0];
+      item.tabIndex = 0;
+    }
+
+    if (document.activeElement === this.menuButton) {
+      item.focus();
+    } else {
+      // focus leaving menu - update the tabbable element to be the group's
+      // current active. This is required for radio buttons (chrome only tabs to
+      // checked radio buttons) but for consistency, we'll apply this to all
+      // groups
+      if (group.length > 1) {
+        const activeElement = group.find(isActive);
+        if (activeElement) {
+          if (activeElement !== item) {
+            item.tabIndex = -1;
+            activeElement.tabIndex = 0;
+          }
+        } else {
+          // if item is a radio button, mark it checked
+          if ((item as HTMLInputElement).type === 'radio') {
+            (item as HTMLInputElement).checked = true;
+          }
+        }
+      }
+    }
+  }
+
+  private handleCloseEvent(e: Event) {
+    if (e.defaultPrevented) return;
+    if (
+      !this.menu.contains(e.target as Node) &&
+      e.target !== this.menuButton &&
+      isVisible(this.menu)
+    ) {
+      hide(this.menu);
+    }
+  }
+
+  private handleToggleEvent(e: PointerEvent) {
+    if (e.defaultPrevented) return;
+    if (e.altKey || e.ctrlKey || e.shiftKey || e.metaKey) return;
+
+    if (isVisible(this.menu)) {
+      hide(this.menu);
+    } else {
+      show(this.menu);
+    }
+    if (e.cancelable) {
+      e.preventDefault();
+    }
+  }
+}
+
 function initBoardIdWorker(win: Window, board: MineBoard) {
   const boardIdWorker = new BoardIdWorker();
 
@@ -1140,6 +1224,12 @@ function getDocumentElements(win: Window) {
   const boardMenu = win.document.getElementById('board_menu') as HTMLElement;
   const boardMenuPulldown = win.document.getElementById(
     'board_menu_pulldown',
+  ) as HTMLButtonElement;
+  const settingsMenuElement = win.document.getElementById(
+    'settings_menu',
+  ) as HTMLElement;
+  const settingsMenuPulldown = win.document.getElementById(
+    'settings_menu_pulldown',
   ) as HTMLButtonElement;
 
   const widthElement = win.document.getElementById('width') as HTMLInputElement;
@@ -1186,9 +1276,11 @@ function getDocumentElements(win: Window) {
 
   const resetButton = win.document.getElementById('reset') as HTMLElement;
   const resetHeader = win.document.getElementById('header') as HTMLElement;
-  const openingConfigElements = Array.from(
-    boardMenu.querySelectorAll('[name=initial_click]'),
-  ).filter((e): e is HTMLInputElement => e instanceof HTMLInputElement);
+  const openingConfigElements = [
+    noMineElement,
+    openAreaElement,
+    minePossibleElement,
+  ];
   const minesRemainingElements = [1, 2, 3].map(i =>
     win.document.getElementById('mines_remaining_' + i),
   ) as HTMLElement[];
@@ -1200,10 +1292,22 @@ function getDocumentElements(win: Window) {
     'debug_element',
   ) as HTMLElement;
 
+  const boardConfigMenu = new Menu(boardMenu, boardMenuPulldown, [
+    [expertPreset, intermediatePreset, beginnerPreset],
+    [widthElement],
+    [heightElement],
+    [mineCountElement],
+    [noMineElement, openAreaElement, minePossibleElement],
+  ]);
+
+  const settingsMenu = new Menu(settingsMenuElement, settingsMenuPulldown, [
+    [systemColor, lightColor, darkColor],
+  ]);
+
   return {
     bodyElement,
-    boardMenu,
-    boardMenuPulldown,
+    boardConfigMenu,
+    settingsMenu,
     widthElement,
     heightElement,
     mineCountElement,
