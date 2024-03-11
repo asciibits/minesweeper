@@ -54,22 +54,20 @@ class MinesweeperUi implements EncodeBoardIdListener {
   private readonly expertPreset: HTMLButtonElement;
   private readonly intermediatePreset: HTMLButtonElement;
   private readonly beginnerPreset: HTMLButtonElement;
-  private readonly noMineElement: HTMLInputElement;
-  private readonly openAreaElement: HTMLInputElement;
-  private readonly minePossibleElement: HTMLInputElement;
   private readonly systemColor: HTMLInputElement;
   private readonly lightColor: HTMLInputElement;
   private readonly darkColor: HTMLInputElement;
+  private readonly noMineElement: HTMLInputElement;
+  private readonly openAreaElement: HTMLInputElement;
+  private readonly minePossibleElement: HTMLInputElement;
+  private readonly allowUndoElement: HTMLInputElement;
   private readonly mineFieldBoard: HTMLElement;
   private readonly minefieldBoardWrapper: HTMLElement;
   private readonly resetButton: HTMLElement;
   private readonly resetHeader: HTMLElement;
-  private readonly openingConfigElements: HTMLInputElement[];
   private readonly minesRemainingDisplay: DigitalDisplay;
   private readonly timerDisplay: DigitalDisplay;
   private readonly debugElement: HTMLElement;
-
-  private readonly boardConfigMenu: Menu;
 
   // handler state
   private resetMouseDownButtons = 0;
@@ -89,8 +87,7 @@ class MinesweeperUi implements EncodeBoardIdListener {
     this.board.addListener((_, e) => this.handleBoardEvent(e));
 
     // Initialize the boardIdWorker
-    this.boardIdWorker = initBoardIdWorker(win, this.board);
-    this.boardIdWorker.addEncodeListener(this);
+    this.boardIdWorker = this.initBoardIdWorker();
 
     // initialize the UI elements
     const elements = getDocumentElements(win);
@@ -101,17 +98,17 @@ class MinesweeperUi implements EncodeBoardIdListener {
     this.expertPreset = elements.expertPreset;
     this.intermediatePreset = elements.intermediatePreset;
     this.beginnerPreset = elements.beginnerPreset;
-    this.noMineElement = elements.noMineElement;
-    this.openAreaElement = elements.openAreaElement;
-    this.minePossibleElement = elements.minePossibleElement;
     this.systemColor = elements.systemColor;
     this.lightColor = elements.lightColor;
     this.darkColor = elements.darkColor;
+    this.noMineElement = elements.noMineElement;
+    this.openAreaElement = elements.openAreaElement;
+    this.minePossibleElement = elements.minePossibleElement;
+    this.allowUndoElement = elements.allowUndoElement;
     this.mineFieldBoard = elements.mineFieldBoard;
     this.minefieldBoardWrapper = elements.minefieldBoardWrapper;
     this.resetButton = elements.resetButton;
     this.resetHeader = elements.resetHeader;
-    this.openingConfigElements = elements.openingConfigElements;
     this.minesRemainingDisplay = new DigitalDisplay(
       elements.minesRemainingElements,
     );
@@ -141,6 +138,8 @@ class MinesweeperUi implements EncodeBoardIdListener {
     this.systemColor.addEventListener('change', colorPaletteChangeHandler);
     this.lightColor.addEventListener('change', colorPaletteChangeHandler);
     this.darkColor.addEventListener('change', colorPaletteChangeHandler);
+    const playStyleChangeHandler = (e: Event) => this.handlePlayStyleChange(e);
+    this.allowUndoElement.addEventListener('change', playStyleChangeHandler);
 
     // reset related listeners
     this.resetButton.addEventListener('click', () => this.rebuildMineField());
@@ -159,7 +158,6 @@ class MinesweeperUi implements EncodeBoardIdListener {
     this.setSettings(settings);
 
     // initialize the tabIndex for the menus
-    this.boardConfigMenu = elements.boardConfigMenu;
     elements.boardConfigMenu.ensureState();
     elements.settingsMenu.ensureState();
 
@@ -229,13 +227,6 @@ class MinesweeperUi implements EncodeBoardIdListener {
         this.widthElement.value = String(this.board.getView().width);
         this.heightElement.value = String(this.board.getView().height);
         this.mineCountElement.value = String(this.board.getView().mineCount);
-        this.openingConfigElements
-          .filter(
-            e =>
-              e.value ===
-              OpeningRestrictions[this.getBoardConfig().initialClick],
-          )
-          .forEach(e => (e.checked = true));
         if (!e.attributes?.['DECODING']) {
           this.bodyElement.classList.remove('in_progress');
           this.updateBoardId();
@@ -543,23 +534,40 @@ class MinesweeperUi implements EncodeBoardIdListener {
 
   private handleColorPaletteEvent(e: Event) {
     if (e.defaultPrevented) return;
-    switch (e.target) {
-      case this.systemColor:
+    this.setColorPalette((e.target as HTMLInputElement).value);
+    this.saveState();
+    e.preventDefault();
+  }
+
+  private setColorPalette(palette: string) {
+    switch (palette) {
+      case 'SYSTEM':
         this.bodyElement.classList.remove('light');
         this.bodyElement.classList.remove('dark');
+        this.systemColor.checked = true;
         break;
-      case this.lightColor:
+      case 'LIGHT':
         this.bodyElement.classList.add('light');
         this.bodyElement.classList.remove('dark');
+        this.lightColor.checked = true;
         break;
-      case this.darkColor:
+      case 'DARK':
         this.bodyElement.classList.remove('light');
         this.bodyElement.classList.add('dark');
+        this.darkColor.checked = true;
         break;
       default:
         return;
     }
-    this.saveState();
+  }
+
+  private handlePlayStyleChange(e: Event) {
+    if (e.defaultPrevented) return;
+    switch (e.target) {
+      case this.allowUndoElement:
+        this.saveState();
+        break;
+    }
     e.preventDefault();
   }
 
@@ -678,8 +686,9 @@ class MinesweeperUi implements EncodeBoardIdListener {
   }
 
   /** Update the URL parameters for a new board id */
-  private updateBoardId(state?: EncodedBoardState, replace = false) {
+  private updateBoardId(state?: EncodedBoardState) {
     const url = new URL(location.href);
+    const initialSearch = url.search;
     if (state?.boardId) {
       url.searchParams.set('board_id', state?.boardId);
       if (state?.viewState) {
@@ -697,14 +706,20 @@ class MinesweeperUi implements EncodeBoardIdListener {
       url.searchParams.delete('view_state');
       url.searchParams.delete('elapsed_time');
     }
-    if (replace) {
-      this.win.history.replaceState({}, '', url);
-    } else {
+    if (initialSearch === url.search) {
+      // nothing to do
+      return;
+    }
+    if (this.allowUndoElement.checked || (initialSearch?.length ?? 0) <= 1) {
       this.win.history.pushState({}, '', url);
+      console.log('Adding history: %o', url.search);
+    } else {
+      this.win.history.replaceState({}, '', url);
+      console.log('Replacing history: %o', url.search);
     }
   }
 
-  /** Rebuild the  */
+  /** Rebuild the Mine Field */
   private rebuildMineField(): void;
   private rebuildMineField(
     boardId?: string,
@@ -819,27 +834,12 @@ class MinesweeperUi implements EncodeBoardIdListener {
       : this.minePossibleElement.checked
         ? OpeningRestrictions.ANY
         : OpeningRestrictions.NO_MINE;
-    return {colorPalette, width, height, mineCount, initialClick};
+    const allowUndo = this.allowUndoElement.checked;
+    return {colorPalette, width, height, mineCount, initialClick, allowUndo};
   }
 
   private setSettings(configState?: ConfigState | null) {
-    switch (configState?.colorPalette) {
-      case 'DARK':
-        if (!this.darkColor.checked) {
-          this.darkColor.click();
-        }
-        break;
-      case 'LIGHT':
-        if (!this.lightColor.checked) {
-          this.lightColor.click();
-        }
-        break;
-      default: // 'SYSTEM'
-        if (!this.systemColor.checked) {
-          this.systemColor.click();
-        }
-        break;
-    }
+    this.setColorPalette(configState?.colorPalette ?? 'SYSTEM');
     switch (configState?.initialClick) {
       case OpeningRestrictions.ZERO:
         this.openAreaElement.checked = true;
@@ -856,6 +856,7 @@ class MinesweeperUi implements EncodeBoardIdListener {
       configState?.height ?? 16,
       configState?.mineCount ?? 99,
     );
+    this.allowUndoElement.checked = configState?.allowUndo ?? false;
   }
 
   private saveState() {
@@ -930,6 +931,34 @@ class MinesweeperUi implements EncodeBoardIdListener {
     }
   }
 
+  private initBoardIdWorker() {
+    const boardIdWorker = new BoardIdWorker();
+
+    this.win.addEventListener('popstate', () => {
+      const url = new URL(location.href);
+      const boardId = url.searchParams.get('board_id');
+      const viewState = url.searchParams.get('view_state') ?? undefined;
+      const elapsedTime = url.searchParams.get('elapsed_time') ?? undefined;
+      if (boardId) {
+        boardIdWorker.requestDecode({boardId, viewState, elapsedTime});
+      } else {
+        if (this.allowUndoElement.checked) {
+          // close all cells
+          this.board.getAllCells().forEach(c => {
+            c.close();
+            c.flag(false);
+          });
+        } else {
+          this.rebuildMineField();
+        }
+      }
+    });
+
+    boardIdWorker.addDecodeToBoardListener(this.board);
+    boardIdWorker.addEncodeListener(this);
+    return boardIdWorker;
+  }
+
   private logError(e: unknown) {
     console.log(e);
     this.debugElement.innerHTML += JSON.stringify(e) + '\n';
@@ -970,11 +999,12 @@ function getCellElement(cell: Cell): HTMLButtonElement {
 }
 
 interface ConfigState {
-  colorPalette: 'SYSTEM' | 'LIGHT' | 'DARK';
-  width: number;
-  height: number;
-  mineCount: number;
-  initialClick: OpeningRestrictions;
+  colorPalette?: 'SYSTEM' | 'LIGHT' | 'DARK';
+  width?: number;
+  height?: number;
+  mineCount?: number;
+  initialClick?: OpeningRestrictions;
+  allowUndo?: boolean;
 }
 
 class DigitalDisplay {
@@ -1194,29 +1224,6 @@ class Menu {
   }
 }
 
-function initBoardIdWorker(win: Window, board: MineBoard) {
-  const boardIdWorker = new BoardIdWorker();
-
-  win.addEventListener('popstate', () => {
-    const url = new URL(location.href);
-    const boardId = url.searchParams.get('board_id');
-    const viewState = url.searchParams.get('view_state') ?? undefined;
-    const elapsedTime = url.searchParams.get('elapsed_time') ?? undefined;
-    if (boardId) {
-      boardIdWorker.requestDecode({boardId, viewState, elapsedTime});
-    } else {
-      // close all cells
-      board.getAllCells().forEach(c => {
-        c.close();
-        c.flag(false);
-      });
-    }
-  });
-
-  boardIdWorker.addDecodeToBoardListener(board);
-  return boardIdWorker;
-}
-
 function getDocumentElements(win: Window) {
   const bodyElement = win.document.getElementsByTagName(
     'body',
@@ -1248,6 +1255,15 @@ function getDocumentElements(win: Window) {
   const beginnerPreset = window.document.getElementById(
     'beginner_preset',
   ) as HTMLButtonElement;
+  const systemColor = window.document.getElementById(
+    'system_color',
+  ) as HTMLInputElement;
+  const lightColor = window.document.getElementById(
+    'light_color',
+  ) as HTMLInputElement;
+  const darkColor = window.document.getElementById(
+    'dark_color',
+  ) as HTMLInputElement;
   const noMineElement = window.document.getElementById(
     'no_mine',
   ) as HTMLInputElement;
@@ -1257,14 +1273,8 @@ function getDocumentElements(win: Window) {
   const minePossibleElement = window.document.getElementById(
     'mine_possible',
   ) as HTMLInputElement;
-  const systemColor = window.document.getElementById(
-    'system_color',
-  ) as HTMLInputElement;
-  const lightColor = window.document.getElementById(
-    'light_color',
-  ) as HTMLInputElement;
-  const darkColor = window.document.getElementById(
-    'dark_color',
+  const allowUndoElement = window.document.getElementById(
+    'allow_undo',
   ) as HTMLInputElement;
 
   const mineFieldBoard = win.document.getElementById(
@@ -1276,11 +1286,6 @@ function getDocumentElements(win: Window) {
 
   const resetButton = win.document.getElementById('reset') as HTMLElement;
   const resetHeader = win.document.getElementById('header') as HTMLElement;
-  const openingConfigElements = [
-    noMineElement,
-    openAreaElement,
-    minePossibleElement,
-  ];
   const minesRemainingElements = [1, 2, 3].map(i =>
     win.document.getElementById('mines_remaining_' + i),
   ) as HTMLElement[];
@@ -1297,11 +1302,12 @@ function getDocumentElements(win: Window) {
     [widthElement],
     [heightElement],
     [mineCountElement],
-    [noMineElement, openAreaElement, minePossibleElement],
   ]);
 
   const settingsMenu = new Menu(settingsMenuElement, settingsMenuPulldown, [
     [systemColor, lightColor, darkColor],
+    [noMineElement, openAreaElement, minePossibleElement],
+    [allowUndoElement],
   ]);
 
   return {
@@ -1314,17 +1320,17 @@ function getDocumentElements(win: Window) {
     expertPreset,
     intermediatePreset,
     beginnerPreset,
-    noMineElement,
-    openAreaElement,
-    minePossibleElement,
     systemColor,
     lightColor,
     darkColor,
+    noMineElement,
+    openAreaElement,
+    minePossibleElement,
+    allowUndoElement,
     mineFieldBoard,
     minefieldBoardWrapper,
     resetButton,
     resetHeader,
-    openingConfigElements,
     minesRemainingElements,
     timerElements,
     debugElement,

@@ -16,7 +16,7 @@
 
 :root {
   --light-background-color: 230, 230, 230;
-  --light-select-color: #bbb;
+  --light-select-color: #fc3;
   --light-text-color: #555;
   --light-text-highlight: #000;
   --light-input-text-color: #555;
@@ -25,7 +25,7 @@
   --light-tooltip-content-background-color: #333;
   --light-tooltip-content-color: #fff;
   --dark-background-color: 17, 17, 17;
-  --dark-select-color: #444;
+  --dark-select-color: #600;
   --dark-text-color: #ccc;
   --dark-text-highlight: #fff;
   --dark-text-subdued: #888;
@@ -113,38 +113,19 @@ body {
 }
 
 .color_palette {
-  grid-template-columns: repeat(3, auto);
-}
-.color_palette.radio_group {
-  position: relative;
-}
-.color_palette .radio_group_item {
-  display: inline-block;
-  position: relative;
-  padding: 0.1rem;
+  grid-template-columns: repeat(3, 1fr);
 }
 
 .color_palette_item {
   display: inline-block;
   color: transparent;
-  width: 1.5rem;
+  min-width: 1.5rem;
+  width: 100%;
   height: 1.5rem;
   background-color: var(--text-subdued);
   mask-size: contain;
   mask-repeat: no-repeat;
   mask-position: 50%;
-}
-
-input:focus-visible + .radio_group_item:has(.color_palette_item)::after {
-  content: '';
-  position: absolute;
-  top: 8%;
-  left: 8%;
-  width: 79%;
-  height: 79%;
-  border: 0.05rem dashed var(--text-color);
-  border-radius: 0.3rem;
-  pointer-events: none;
 }
 
 input:focus + .radio_group_item .color_palette_item,
@@ -154,7 +135,8 @@ input:active + .radio_group_item .color_palette_item,
   background-color: var(--text-highlight);
 }
 
-.radio_group input[type='radio'] {
+.radio_group input[type='radio'],
+.switch_control {
   height: 0;
   width: 0;
   position: absolute;
@@ -177,13 +159,10 @@ input:active + .radio_group_item .color_palette_item,
   mask-image: url(data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBzdHlsZT0iZmlsbDpyZ2JhKDAsMCwwLDEpOyI+PHBhdGggZD0iTTIwLjc0MiAxMy4wNDVhOC4wODggOC4wODggMCAwIDEtMi4wNzcuMjcxYy0yLjEzNSAwLTQuMTQtLjgzLTUuNjQ2LTIuMzM2YTguMDI1IDguMDI1IDAgMCAxLTIuMDY0LTcuNzIzQTEgMSAwIDAgMCA5LjczIDIuMDM0YTEwLjAxNCAxMC4wMTQgMCAwIDAtNC40ODkgMi41ODJjLTMuODk4IDMuODk4LTMuODk4IDEwLjI0MyAwIDE0LjE0M2E5LjkzNyA5LjkzNyAwIDAgMCA3LjA3MiAyLjkzIDkuOTMgOS45MyAwIDAgMCA3LjA3LTIuOTI5IDEwLjAwNyAxMC4wMDcgMCAwIDAgMi41ODMtNC40OTEgMS4wMDEgMS4wMDEgMCAwIDAtMS4yMjQtMS4yMjR6bS0yLjc3MiA0LjMwMWE3Ljk0NyA3Ljk0NyAwIDAgMS01LjY1NiAyLjM0MyA3Ljk1MyA3Ljk1MyAwIDAgMS01LjY1OC0yLjM0NGMtMy4xMTgtMy4xMTktMy4xMTgtOC4xOTUgMC0xMS4zMTRhNy45MjMgNy45MjMgMCAwIDEgMi4wNi0xLjQ4MyAxMC4wMjcgMTAuMDI3IDAgMCAwIDIuODkgNy44NDggOS45NzIgOS45NzIgMCAwIDAgNy44NDggMi44OTEgOC4wMzYgOC4wMzYgMCAwIDEtMS40ODQgMi4wNTl6Ii8+PC9zdmc+);
 }
 
-.nowrap {
-  white-space: nowrap;
-}
-
 .persistent_button,
 .radio_group_item {
   display: block;
+  position: relative;
   border: 0.1rem var(--text-subdued) solid;
   outline: none;
   background-color: inherit;
@@ -196,6 +175,7 @@ input:active + .radio_group_item .color_palette_item,
   white-space: nowrap;
   text-align: center;
   min-width: 0;
+  width: 100%;
 }
 
 .persistent_button:active,
@@ -210,9 +190,20 @@ input:active + .radio_group_item {
   border-color: var(--text-highlight);
 }
 
-.persistent_button:focus-visible,
-input:focus-visible + .radio_group_item {
-  text-decoration: underline;
+.radio_group_item {
+  display: inline-block;
+}
+.persistent_button:focus-visible::after,
+input:focus-visible + .radio_group_item::after {
+  content: '';
+  position: absolute;
+  top: 8%;
+  left: 8%;
+  width: 79%;
+  height: 79%;
+  border: 0.05rem dashed var(--text-color);
+  border-radius: 0.3rem;
+  pointer-events: none;
 }
 
 .persistent_button:active,
@@ -220,6 +211,60 @@ input:focus-visible + .radio_group_item {
 input:checked + .radio_group_item,
 input:active + .radio_group_item {
   background-color: var(--select-color);
+}
+
+.switch {
+  position: relative;
+  box-sizing: content-box;
+  display: block;
+  justify-self: end;
+  width: 2rem;
+  height: 1rem;
+  padding: 0.2rem;
+  border-radius: 0.7rem;
+  transition: background-color 0.15s;
+  border: 0.05rem solid var(--text-color);
+}
+.switch::before {
+  content: '';
+  box-sizing: content-box;
+  position: absolute;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 0.7rem;
+  border: 0.05rem solid transparent;
+  background-color: var(--text-color);
+  top: 0.15rem;
+  left: 0.15rem;
+  transition:
+    left 0.15s,
+    background-color 0.15s;
+}
+.switch:hover,
+.switch:hover::before {
+  border-color: var(--text-highlight);
+}
+.switch:hover::before,
+input[type='checkbox']:focus-visible + .switch::before {
+  background-color: var(--text-highlight);
+}
+input[type='checkbox']:checked + .switch::before {
+  left: 1.15rem;
+}
+input[type='checkbox']:checked + .switch {
+  background-color: var(--select-color);
+}
+input[type='checkbox']:focus-visible + .switch::after {
+  content: '';
+  box-sizing: border-box;
+  position: absolute;
+  width: 2.2rem;
+  height: 1.2rem;
+  top: 0.1rem;
+  left: 0.1rem;
+  border: 0.05rem dashed;
+  border-color:  var(--text-highlight);
+  border-radius: 0.5rem;
 }
 
 .board {
@@ -235,6 +280,7 @@ input:active + .radio_group_item {
 
 fieldset {
   display: grid;
+  align-items: center;
   gap: 0.7rem;
   padding: 0.5rem;
   margin: 0;
@@ -250,7 +296,12 @@ fieldset legend {
 
 .opening_style {
   margin-top: 0.8rem;
-  grid-template-columns: repeat(3, auto);
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.play_style {
+  margin-top: 0.8rem;
+  grid-template-columns: auto min-content;
 }
 
 .board_config {

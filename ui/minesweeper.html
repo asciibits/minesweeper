@@ -72,57 +72,6 @@
             />
           </fieldset>
         </fieldset>
-        <fieldset class="opening_style">
-          <legend>Opening Style</legend>
-          <div class="radio_group">
-            <input
-              id="no_mine"
-              type="radio"
-              name="initial_click"
-              value="NO_MINE"
-              tabindex="-1"
-            />
-            <label
-              for="no_mine"
-              class="radio_group_item"
-              title="First click will never be a mine"
-            >
-              No Mine
-            </label>
-          </div>
-          <div class="radio_group">
-            <input
-              id="open_area"
-              type="radio"
-              name="initial_click"
-              value="ZERO"
-              tabindex="-1"
-            />
-            <label
-              for="open_area"
-              class="radio_group_item"
-              title="First click will always be an open area"
-            >
-              Open Area
-            </label>
-          </div>
-          <div class="radio_group">
-            <input
-              id="mine_possible"
-              type="radio"
-              name="initial_click"
-              value="ANY"
-              tabindex="-1"
-            />
-            <label
-              for="mine_possible"
-              class="radio_group_item"
-              title="First click may be anything, including a mine"
-            >
-              Possible Mine
-            </label>
-          </div>
-        </fieldset>
       </div>
       <div class="menu_pulldown_wrapper">
         <button
@@ -182,6 +131,65 @@
               >Dark</label
             >
           </div>
+        </fieldset>
+        <fieldset class="opening_style">
+          <legend>Opening Style</legend>
+          <div class="radio_group">
+            <input
+              id="no_mine"
+              type="radio"
+              name="initial_click"
+              value="NO_MINE"
+              tabindex="-1"
+            />
+            <label
+              for="no_mine"
+              class="radio_group_item"
+              title="First click will never be a mine"
+            >
+              No Mine
+            </label>
+          </div>
+          <div class="radio_group">
+            <input
+              id="open_area"
+              type="radio"
+              name="initial_click"
+              value="ZERO"
+              tabindex="-1"
+            />
+            <label
+              for="open_area"
+              class="radio_group_item"
+              title="First click will always be an open area"
+            >
+              Open Area
+            </label>
+          </div>
+          <div class="radio_group">
+            <input
+              id="mine_possible"
+              type="radio"
+              name="initial_click"
+              value="ANY"
+              tabindex="-1"
+            />
+            <label
+              for="mine_possible"
+              class="radio_group_item"
+              title="First click may be anything, including a mine"
+            >
+              Possible Mine
+            </label>
+          </div>
+        </fieldset>
+        <fieldset class="play_style" role="presentation">
+          <legend>Play style</legend>
+          <label for="allow_undo" class="switch_label"
+            >Allow back-button undo</label
+          >
+          <input type="checkbox" id="allow_undo" class="switch_control" tabindex="-1" />
+          <label for="allow_undo" class="switch"></label>
         </fieldset>
       </div>
 
