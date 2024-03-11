@@ -185,11 +185,36 @@
         </fieldset>
         <fieldset class="play_style" role="presentation">
           <legend>Play style</legend>
-          <label for="allow_undo" class="switch_label"
-            >Allow back-button undo</label
-          >
-          <input type="checkbox" id="allow_undo" class="switch_control" tabindex="-1" />
+          <label for="allow_undo" class="switch_label">
+            Allow back-button undo
+          </label>
+          <input
+            type="checkbox"
+            id="allow_undo"
+            class="switch_control"
+            tabindex="-1"
+          />
           <label for="allow_undo" class="switch"></label>
+          <label for="single_click_chord" class="switch_label">
+            Allow single-click chords
+          </label>
+          <input
+            type="checkbox"
+            id="single_click_chord"
+            class="switch_control"
+            tabindex="-1"
+          />
+          <label for="single_click_chord" class="switch"></label>
+          <label for="allow_flag_chord" class="switch_label">
+            "Chord" when flagging open cells
+          </label>
+          <input
+            type="checkbox"
+            id="allow_flag_chord"
+            class="switch_control"
+            tabindex="-1"
+          />
+          <label for="allow_flag_chord" class="switch"></label>
         </fieldset>
       </div>
 
@@ -216,9 +241,7 @@
           </div>
         </div>
         <div class="header_part center_justify">
-          <button id="reset" class="border_out" autofocus="autofocus">
-            😀
-          </button>
+          <button id="reset" class="border_out" autofocus="autofocus"></button>
         </div>
         <div class="header_part right_justify">
           <div id="timer" class="digital_display border_in">

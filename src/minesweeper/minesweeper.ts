@@ -795,10 +795,17 @@ export class Cell {
     }
     this.getNeighbors().forEach(n => n.press(pressed, attributes));
   }
-  pressCellOrChord(pressed = true, attributes?: Record<string, unknown>) {
+  pressCellOrChord(
+    pressed = true,
+    chordAllowed = true,
+    openAllowed = true,
+    attributes?: Record<string, unknown>,
+  ) {
     if (!this.isOpened()) {
-      this.press(pressed, attributes);
-    } else {
+      if (openAllowed) {
+        this.press(pressed, attributes);
+      }
+    } else if (chordAllowed) {
       this.pressChord(pressed, attributes);
     }
   }

@@ -61,6 +61,8 @@ class MinesweeperUi implements EncodeBoardIdListener {
   private readonly openAreaElement: HTMLInputElement;
   private readonly minePossibleElement: HTMLInputElement;
   private readonly allowUndoElement: HTMLInputElement;
+  private readonly singleClickChordElement: HTMLInputElement;
+  private readonly allowFlagChordElement: HTMLInputElement;
   private readonly mineFieldBoard: HTMLElement;
   private readonly minefieldBoardWrapper: HTMLElement;
   private readonly resetButton: HTMLElement;
@@ -72,6 +74,7 @@ class MinesweeperUi implements EncodeBoardIdListener {
   // handler state
   private resetMouseDownButtons = 0;
   private cellMouseDownButtons = 0;
+  private cellMouseReleasedButtons = 0;
   private cellTouchStart?: Partial<Touch>;
   private previousActiveCell?: HTMLButtonElement;
 
@@ -105,6 +108,8 @@ class MinesweeperUi implements EncodeBoardIdListener {
     this.openAreaElement = elements.openAreaElement;
     this.minePossibleElement = elements.minePossibleElement;
     this.allowUndoElement = elements.allowUndoElement;
+    this.singleClickChordElement = elements.singleClickChordElement;
+    this.allowFlagChordElement = elements.allowFlagChordElement;
     this.mineFieldBoard = elements.mineFieldBoard;
     this.minefieldBoardWrapper = elements.minefieldBoardWrapper;
     this.resetButton = elements.resetButton;
@@ -140,6 +145,14 @@ class MinesweeperUi implements EncodeBoardIdListener {
     this.darkColor.addEventListener('change', colorPaletteChangeHandler);
     const playStyleChangeHandler = (e: Event) => this.handlePlayStyleChange(e);
     this.allowUndoElement.addEventListener('change', playStyleChangeHandler);
+    this.singleClickChordElement.addEventListener(
+      'change',
+      playStyleChangeHandler,
+    );
+    this.allowFlagChordElement.addEventListener(
+      'change',
+      playStyleChangeHandler,
+    );
 
     // reset related listeners
     this.resetButton.addEventListener('click', () => this.rebuildMineField());
@@ -181,11 +194,13 @@ class MinesweeperUi implements EncodeBoardIdListener {
               cell.flag(true, {EXPOSING: true});
             }
           }
-          this.resetButton.innerText = '😎';
+          this.bodyElement.classList.add('complete');
+          // this.resetButton.innerText = '😎';
         }, 0);
         break;
       case BoardEventType.UNCOMPLETE:
-        this.resetButton.innerText = '🤔';
+        this.bodyElement.classList.remove('complete');
+        // this.resetButton.innerText = '🤔';
         break;
       case BoardEventType.EXPLODE:
         // use settimeout to allow the event queu to flush before rendering
@@ -209,18 +224,20 @@ class MinesweeperUi implements EncodeBoardIdListener {
           // set to "building" mode to supress the board-id generation while
           // exposing the mines
           this.board.openGroup(unflaggedMines, {EXPOSING: true});
-          this.resetButton.innerText = '😵';
+          this.bodyElement.classList.add('explode');
+          // this.resetButton.innerText = '😵';
         }, 0);
         break;
       case BoardEventType.UNEXPLODE:
-        this.resetButton.innerText = '🤔';
+        this.bodyElement.classList.remove('explode');
+        // this.resetButton.innerText = '🤔';
         this.board.getAllCells().forEach(c => c.setWrong(false));
         break;
       case BoardEventType.TIME_ELAPSED:
         this.updateTimer();
         break;
       case BoardEventType.RESET:
-        this.resetButton.innerText = '😀';
+        // this.resetButton.innerText = '😀';
         this.updateMinesRemaining();
         this.updateTimer();
         this.resetBoard();
@@ -229,12 +246,14 @@ class MinesweeperUi implements EncodeBoardIdListener {
         this.mineCountElement.value = String(this.board.getView().mineCount);
         if (!e.attributes?.['DECODING']) {
           this.bodyElement.classList.remove('in_progress');
+          this.bodyElement.classList.remove('explode');
+          this.bodyElement.classList.remove('complete');
           this.updateBoardId();
         }
         this.minefieldBoardWrapper.classList.remove('blank');
         break;
       case BoardEventType.FIRST_MOVE:
-        this.resetButton.innerText = '🤔';
+        // this.resetButton.innerText = '🤔';
         this.bodyElement.classList.add('in_progress');
         break;
       case BoardEventType.CELLS_OPENED:
@@ -325,9 +344,14 @@ class MinesweeperUi implements EncodeBoardIdListener {
     switch (event.type) {
       case 'mousedown':
         this.cellMouseDownButtons |= event.buttons;
-        if (event.buttons & 1) {
-          // left-click - show cells as 'pressed'
-          cell.pressCellOrChord();
+        this.cellMouseReleasedButtons = 0;
+        if (event.buttons & 1 || event.buttons & 4) {
+          // left/middle-click - show cells as 'pressed'
+          cell.pressCellOrChord(
+            true,
+            this.singleClickChordElement.checked || !!(event.buttons & 6),
+            !!(event.buttons & 1),
+          );
         } else if (event.buttons & 2) {
           // right-click - Either flag if unopened, or chord
           this.processFlag(cell);
@@ -338,13 +362,22 @@ class MinesweeperUi implements EncodeBoardIdListener {
       case 'mouseup':
         const releasedButtons = this.cellMouseDownButtons & ~event.buttons;
         this.cellMouseDownButtons &= event.buttons;
+        this.cellMouseReleasedButtons |= releasedButtons;
         cell.pressCellOrChord(false);
-        if (releasedButtons & 1) {
-          this.processClick(cell);
+        if (this.cellMouseReleasedButtons & 1) {
+          this.processClick(
+            cell,
+            this.singleClickChordElement.checked ||
+              !!(this.cellMouseReleasedButtons & 6),
+          );
+        } else if (this.cellMouseReleasedButtons & 4) {
+          // middle click. Chord-only
+          this.processClick(cell, true, false);
         }
         break;
       case 'mouseenter':
         this.cellMouseDownButtons &= event.buttons;
+        this.cellMouseReleasedButtons = 0;
         // use `buttons` (plural) which has info for enter events
         if (this.cellMouseDownButtons & 1) {
           // If the user clicks the left button and drags it around the board,
@@ -353,6 +386,7 @@ class MinesweeperUi implements EncodeBoardIdListener {
         }
         break;
       case 'mouseleave':
+        this.cellMouseReleasedButtons = 0;
         cell.pressCellOrChord(false);
         break;
     }
@@ -455,7 +489,7 @@ class MinesweeperUi implements EncodeBoardIdListener {
       case ' ':
         // capture space so we handle the click on 'keydown' rather than
         // 'keypressed' - it seems more agile in a game environment
-        this.processClick(cell);
+        this.processClick(cell, this.singleClickChordElement.checked);
         break;
       case 'f':
         this.processFlag(cell);
@@ -563,11 +597,7 @@ class MinesweeperUi implements EncodeBoardIdListener {
 
   private handlePlayStyleChange(e: Event) {
     if (e.defaultPrevented) return;
-    switch (e.target) {
-      case this.allowUndoElement:
-        this.saveState();
-        break;
-    }
+    this.saveState();
     e.preventDefault();
   }
 
@@ -712,10 +742,8 @@ class MinesweeperUi implements EncodeBoardIdListener {
     }
     if (this.allowUndoElement.checked || (initialSearch?.length ?? 0) <= 1) {
       this.win.history.pushState({}, '', url);
-      console.log('Adding history: %o', url.search);
     } else {
       this.win.history.replaceState({}, '', url);
-      console.log('Replacing history: %o', url.search);
     }
   }
 
@@ -835,7 +863,18 @@ class MinesweeperUi implements EncodeBoardIdListener {
         ? OpeningRestrictions.ANY
         : OpeningRestrictions.NO_MINE;
     const allowUndo = this.allowUndoElement.checked;
-    return {colorPalette, width, height, mineCount, initialClick, allowUndo};
+    const singleClickChord = this.singleClickChordElement.checked;
+    const allowFlagChord = this.allowFlagChordElement.checked;
+    return {
+      colorPalette,
+      width,
+      height,
+      mineCount,
+      initialClick,
+      allowUndo,
+      singleClickChord,
+      allowFlagChord,
+    };
   }
 
   private setSettings(configState?: ConfigState | null) {
@@ -857,6 +896,9 @@ class MinesweeperUi implements EncodeBoardIdListener {
       configState?.mineCount ?? 99,
     );
     this.allowUndoElement.checked = configState?.allowUndo ?? false;
+    this.singleClickChordElement.checked =
+      configState?.singleClickChord ?? false;
+    this.allowFlagChordElement.checked = configState?.allowFlagChord ?? false;
   }
 
   private saveState() {
@@ -903,15 +945,15 @@ class MinesweeperUi implements EncodeBoardIdListener {
     this.timerDisplay.setValue(this.board.getTimeElapsed() / 1000);
   }
 
-  private processClick(cell: Cell) {
+  private processClick(cell: Cell, allowChord = false, allowOpen = true) {
     if (this.previousActiveCell) {
       this.previousActiveCell.tabIndex = -1;
     }
     this.previousActiveCell = getCellElement(cell);
     this.previousActiveCell.tabIndex = 0;
-    if (cell.isOpened()) {
+    if (cell.isOpened() && allowChord) {
       cell.chord();
-    } else if (!cell.isFlagged()) {
+    } else if (!cell.isFlagged() && allowOpen) {
       cell.open();
     }
   }
@@ -922,9 +964,7 @@ class MinesweeperUi implements EncodeBoardIdListener {
     }
     this.previousActiveCell = getCellElement(cell);
     this.previousActiveCell.tabIndex = 0;
-    if (cell.isOpened()) {
-      // using the 'flag' button to open a chord is non-standard, but very
-      // handy. I should make it an option
+    if (cell.isOpened() && this.allowFlagChordElement.checked) {
       cell.chord();
     } else {
       cell.flag(!cell.isFlagged());
@@ -1005,6 +1045,8 @@ interface ConfigState {
   mineCount?: number;
   initialClick?: OpeningRestrictions;
   allowUndo?: boolean;
+  singleClickChord?: boolean;
+  allowFlagChord?: boolean;
 }
 
 class DigitalDisplay {
@@ -1276,6 +1318,12 @@ function getDocumentElements(win: Window) {
   const allowUndoElement = window.document.getElementById(
     'allow_undo',
   ) as HTMLInputElement;
+  const singleClickChordElement = window.document.getElementById(
+    'single_click_chord',
+  ) as HTMLInputElement;
+  const allowFlagChordElement = window.document.getElementById(
+    'allow_flag_chord',
+  ) as HTMLInputElement;
 
   const mineFieldBoard = win.document.getElementById(
     'minefield',
@@ -1308,6 +1356,8 @@ function getDocumentElements(win: Window) {
     [systemColor, lightColor, darkColor],
     [noMineElement, openAreaElement, minePossibleElement],
     [allowUndoElement],
+    [singleClickChordElement],
+    [allowFlagChordElement],
   ]);
 
   return {
@@ -1327,6 +1377,8 @@ function getDocumentElements(win: Window) {
     openAreaElement,
     minePossibleElement,
     allowUndoElement,
+    singleClickChordElement,
+    allowFlagChordElement,
     mineFieldBoard,
     minefieldBoardWrapper,
     resetButton,
