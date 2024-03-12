@@ -1,6 +1,6 @@
 #!/bin/bash
 
-npx esbuild ./src/ui/index.ts ./src/ui/board_id_worker_entry.ts --bundle --minify --outdir=docs
+npx esbuild ./src/ui/index.ts ./src/ui/board_id_worker_entry.ts --bundle --splitting --minify --format=esm --outdir=docs
 cp ./ui/icon.svg docs/
 cp ./ui/favicon.ico docs/
 npx css-minify -f ./ui/minestyle.css -o docs/
