@@ -19,6 +19,7 @@ import {
   EncodedBoardState,
   KnownBoardState,
   applyBoardState,
+  encodeElapsedTime,
   decodeBoardState,
 } from '../minesweeper/minesweeper_storage.js';
 
@@ -747,6 +748,18 @@ class MinesweeperUi implements EncodeBoardIdListener {
     }
   }
 
+  private updateElapsedTime() {
+    const encoded = encodeElapsedTime(this.board.getTimeElapsed());
+    const url = new URL(location.href);
+    if (encoded) {
+      url.searchParams.set('elapsed_time', encoded);
+    } else {
+      url.searchParams.delete('elapsed_time');
+    }
+    console.log('updating history');
+    this.win.history.replaceState({}, '', url);
+  }
+
   /** Rebuild the Mine Field */
   private rebuildMineField(): void;
   private rebuildMineField(
@@ -942,7 +955,9 @@ class MinesweeperUi implements EncodeBoardIdListener {
     this.minesRemainingDisplay.setValue(this.board.getMinesRemaining());
   }
   private updateTimer() {
-    this.timerDisplay.setValue(this.board.getTimeElapsed() / 1000);
+    if (this.timerDisplay.setValue(this.board.getTimeElapsed() / 1000)) {
+      this.updateElapsedTime();
+    }
   }
 
   private processClick(cell: Cell, allowChord = false, allowOpen = true) {
@@ -1052,7 +1067,7 @@ interface ConfigState {
 class DigitalDisplay {
   constructor(private readonly cells: HTMLElement[]) {}
 
-  setValue(val: number | string) {
+  setValue(val: number | string): boolean {
     function leftPad(v: string, len: number, c: string): string {
       return (
         new Array<string>(Math.max(len - v.length, 0)).fill(c).join('') + v
@@ -1079,9 +1094,14 @@ class DigitalDisplay {
         val = val.substring(0, this.cells.length);
       }
     }
+    let changed = false;
     for (let i = 0; i < this.cells.length; i++) {
-      this.cells[i].innerText = val[i];
+      if (this.cells[i].innerText !== val[i]) {
+        changed = true;
+        this.cells[i].innerText = val[i];
+      }
     }
+    return changed;
   }
 }
 
