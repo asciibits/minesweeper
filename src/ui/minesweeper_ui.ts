@@ -756,7 +756,6 @@ class MinesweeperUi implements EncodeBoardIdListener {
     } else {
       url.searchParams.delete('elapsed_time');
     }
-    console.log('updating history');
     this.win.history.replaceState({}, '', url);
   }
 
@@ -1344,6 +1343,9 @@ function getDocumentElements(win: Window) {
   const allowFlagChordElement = window.document.getElementById(
     'allow_flag_chord',
   ) as HTMLInputElement;
+  const boardBuilderLink = window.document.getElementById(
+    'board_builder_link',
+  ) as HTMLAnchorElement;
 
   const mineFieldBoard = win.document.getElementById(
     'minefield',
@@ -1378,6 +1380,7 @@ function getDocumentElements(win: Window) {
     [allowUndoElement],
     [singleClickChordElement],
     [allowFlagChordElement],
+    [boardBuilderLink],
   ]);
 
   return {
@@ -1399,6 +1402,7 @@ function getDocumentElements(win: Window) {
     allowUndoElement,
     singleClickChordElement,
     allowFlagChordElement,
+    boardBuilderLink,
     mineFieldBoard,
     minefieldBoardWrapper,
     resetButton,
