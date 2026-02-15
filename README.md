@@ -9,3 +9,5 @@ Go here to play a game: https://asciibits.github.io/minesweeper/
 npm install ts-node
 npm test
 ```
+
+And this
