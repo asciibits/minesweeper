@@ -10,4 +10,3 @@ npm install ts-node
 npm test
 ```
 
-And this
