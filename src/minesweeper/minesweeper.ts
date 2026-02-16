@@ -1,9 +1,10 @@
+import {assert} from '../util/assert.js';
 import {
   bitmapFromLexicalOrdering,
+  combinations,
   lexicalOrdering,
 } from '../util/combinitorics.js';
-import {Random, choose} from '../util/random.js';
-import {assert} from '../util/assert.js';
+import {Random, random} from '../util/random.js';
 import {IterType, asIterable} from '../util/utils.js';
 
 /** The value displayed in a cell. */
@@ -163,17 +164,24 @@ export class MineField implements MineFieldView {
       `Not enough room for the requested number of mines`,
     );
 
-    // To determine the random mine positions, first create an array of all
-    // positions(i.e. [0, 1, 2, ..., n]). Next, filter out any reserved
-    // positions. And last, for the first 'b' positions, swap it with a random
-    // position after it. Those first 'b' positions become the mines.
-    const mines = choose(
-      Array.from({length: cellCount}, (_v, i) => i).filter(
-        p => !reservedSet.has(p),
-      ),
+    const boards = combinations(cellCount - reservedSet.size, mineCount);
+    let mineMap = bitmapFromLexicalOrdering(
+      (rand ?? random).getRandomBigInteger(boards, 0n, true),
+      cellCount - reservedSet.size,
       mineCount,
-      rand,
     );
+
+    let i = 0;
+    const mines: number[] = [];
+    while (mineMap > 0n) {
+      while ((mineMap & 1n) == 0n) {
+        while (reservedSet.has(i++));
+        mineMap >>= 1n;
+      }
+      while (reservedSet.has(i++));
+      mines.push(i - 1);
+      mineMap >>= 1n;
+    }
 
     return new MineField(width, height, mines);
   }
