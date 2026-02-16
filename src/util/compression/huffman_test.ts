@@ -262,7 +262,7 @@ describe('Huffman', () => {
       const code = generateHuffmanCode(symbols);
       const digits = testRandom.getRandomInteger(1000, 100);
       const bitset = new BitSetWriter().writeBigBits(
-        testRandom.getRandomBigBits(BigInt(digits * bitCount)),
+        testRandom.getRandomBigBits(digits * bitCount),
         digits * bitCount,
       ).bitset;
       const encoded = encodeHuffman(bitset.toReader(), code.encode);

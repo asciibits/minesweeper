@@ -109,7 +109,7 @@ describe('Arithmetic Coding', () => {
       const samples = 100;
       for (let i = 0; i < samples; i++) {
         const bitCount = testRandom.getRandomInteger(2000, 1);
-        const bits = testRandom.getRandomBigBits(BigInt(bitCount));
+        const bits = testRandom.getRandomBigBits(bitCount);
         const prob = testRandom.getRandomInteger(100, 1) / 100;
         const bitset = new BitSetWriter().writeBigBits(bits, bitCount).bitset;
         let encoded: BitSet | undefined = undefined;
@@ -239,7 +239,7 @@ describe('Arithmetic Coding', () => {
       const samples = 100;
       for (let i = 0; i < samples; i++) {
         const bitCount = testRandom.getRandomInteger(20, 1);
-        const bits = testRandom.getRandomBigBits(BigInt(bitCount));
+        const bits = testRandom.getRandomBigBits(bitCount);
         const prob = testRandom.getRandomInteger(10, 1) / 10;
         const bitset = new BitSetWriter().writeBigBits(bits, bitCount).bitset;
         let encoded: BitSet | undefined = undefined;
@@ -769,7 +769,7 @@ describe('Arithmetic Coding', () => {
         const samples = 100;
         for (let i = 0; i < samples; i++) {
           const val = testRandom.getRandomBigBits(
-            testRandom.getRandomBigInteger(512n, 1n),
+            testRandom.getRandomInteger(512, 1),
           );
           const bitCount = testRandom.getRandomInteger(32);
           const p = testRandom.getRandomDouble();

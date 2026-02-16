@@ -327,7 +327,7 @@ describe('BitSet', () => {
               end - start + 10,
               Math.max(end - start - 10, 0),
             );
-            let val = testRandom.getRandomBigBits(BigInt(bitsToUse));
+            let val = testRandom.getRandomBigBits(bitsToUse);
             if (testRandom.getRandomBits(1) !== 0) {
               val = ~val;
             }

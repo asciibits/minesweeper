@@ -89,12 +89,12 @@ export class Random {
     return result + min;
   }
 
-  getRandomBigBits(bitLength: bigint): bigint {
+  getRandomBigBits(bitLength: number): bigint {
     assert(bitLength >= 0, 'BitLength must be positive');
     let result = 0n;
     while (bitLength > 32) {
       result = (result << 32n) | BigInt(this.getRandomBits(32));
-      bitLength -= 32n;
+      bitLength -= 32;
     }
     result =
       (result << BigInt(bitLength)) |
@@ -102,15 +102,28 @@ export class Random {
     return result;
   }
 
-  getRandomBigInteger(max: bigint, min = 0n): bigint {
+  getRandomBigInteger(
+    max: bigint,
+    min = 0n,
+    allowImperfectDistribution = false,
+  ): bigint {
     assert(min <= max, 'Min must be >= 0 and <= max');
     max -= min;
 
     const bitCount = boundingLog2(max);
     let result: bigint;
-    do {
-      result = this.getRandomBigBits(bitCount);
-    } while (result >= max);
+    if (!allowImperfectDistribution) {
+      do {
+        result = this.getRandomBigBits(bitCount);
+      } while (result >= max);
+    } else {
+      // Less than perfect distribution, but it never needs more bits. Unless
+      // `max` is a perfect power of 2, this will favor some values over
+      // others. Specifically, of the `max` values to be returned, their
+      // likelihood of occurring is either 1/max or 2/max
+      result =
+        (this.getRandomBigBits(bitCount) * max) / (1n << BigInt(bitCount));
+    }
 
     return result + min;
   }
@@ -152,12 +165,21 @@ export function choose<T>(
   return items;
 }
 
-function boundingLog2<T extends number | bigint>(n: T): T {
-  if (typeof n === 'number') {
-    return (32 - Math.clz32(n - 1)) as T;
+const MAX_UINT32 = (1n << 32n) - 1n;
+
+function boundingLog2(n: number | bigint): number {
+  let c = 0;
+  if (typeof n === 'bigint') {
+    let t: bigint = n - 1n;
+    while (t > MAX_UINT32) {
+      c += 32;
+      t >>= 32n;
+    }
+    n = Number(t);
+  } else {
+    n -= 1;
   }
-  // this isn't great, but it gets the job done
-  return BigInt(((n as bigint) - 1n).toString(2).length) as T;
+  return c + (32 - Math.clz32(n));
 }
 
 /**

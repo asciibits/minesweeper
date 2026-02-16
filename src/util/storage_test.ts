@@ -137,7 +137,7 @@ describe('Storage', () => {
     it('encodes / decodes bigint round trip', () => {
       const samples = 100;
       for (let i = 0; i < samples; i++) {
-        const val = testRandom.getRandomBigBits(1000n);
+        const val = testRandom.getRandomBigBits(1000);
         const bitCount = testRandom.getRandomInteger(32, 1);
         const encoded = encodeContinuous(val, bitCount);
         const decoded = decodeBigContinuous(encoded.toReader(), bitCount);
@@ -332,7 +332,7 @@ describe('Storage', () => {
       const samples = 100;
       for (let i = 0; i < samples; i++) {
         const val = testRandom.getRandomBigBits(
-          testRandom.getRandomBigInteger(1000n, 1n),
+          testRandom.getRandomInteger(1000, 1),
         );
         const bitCount = testRandom.getRandomInteger(32);
         if (val === 0n && bitCount === 0) {

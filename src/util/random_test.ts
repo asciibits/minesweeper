@@ -37,34 +37,34 @@ describe('Random', () => {
   describe('getRandomBigBits', () => {
     it('returns the 32-bit value unchanged', () => {
       expect(
-        new Random(new TestRandomBitSource([13])).getRandomBigBits(32n),
+        new Random(new TestRandomBitSource([13])).getRandomBigBits(32),
       ).toBe(13n);
       expect(
-        new Random(new TestRandomBitSource([-1])).getRandomBigBits(32n),
+        new Random(new TestRandomBitSource([-1])).getRandomBigBits(32),
       ).toBe(0xffffffffn);
     });
     it('uses one random for multiple sets of bits', () => {
       const r = new Random(new TestRandomBitSource([0xcafe1234]));
-      expect(r.getRandomBigBits(4n)).toBe(0xcn);
-      expect(r.getRandomBigBits(4n)).toBe(0xan);
-      expect(r.getRandomBigBits(4n)).toBe(0xfn);
-      expect(r.getRandomBigBits(4n)).toBe(0xen);
-      expect(r.getRandomBigBits(4n)).toBe(0x1n);
-      expect(r.getRandomBigBits(4n)).toBe(0x2n);
-      expect(r.getRandomBigBits(4n)).toBe(0x3n);
-      expect(r.getRandomBigBits(4n)).toBe(0x4n);
+      expect(r.getRandomBigBits(4)).toBe(0xcn);
+      expect(r.getRandomBigBits(4)).toBe(0xan);
+      expect(r.getRandomBigBits(4)).toBe(0xfn);
+      expect(r.getRandomBigBits(4)).toBe(0xen);
+      expect(r.getRandomBigBits(4)).toBe(0x1n);
+      expect(r.getRandomBigBits(4)).toBe(0x2n);
+      expect(r.getRandomBigBits(4)).toBe(0x3n);
+      expect(r.getRandomBigBits(4)).toBe(0x4n);
     });
     it('uses the remaining bits for next random', () => {
       const r = new Random(new TestRandomBitSource([0xcafebabe, 0xbeef0000]));
-      expect(r.getRandomBigBits(20n)).toBe(0xcafebn);
-      expect(r.getRandomBigBits(28n)).toBe(0xabebeefn);
+      expect(r.getRandomBigBits(20)).toBe(0xcafebn);
+      expect(r.getRandomBigBits(28)).toBe(0xabebeefn);
     });
     it('combines values to create bigints', () => {
       const r = new Random(
         new TestRandomBitSource([0xcafebabe, 0xdeadbeef, 0xba5eba11]),
       );
-      expect(r.getRandomBigBits(52n)).toBe(0xcafebabedeadbn);
-      expect(r.getRandomBigBits(40n)).toBe(0xba5eba11een);
+      expect(r.getRandomBigBits(52)).toBe(0xcafebabedeadbn);
+      expect(r.getRandomBigBits(40)).toBe(0xba5eba11een);
     });
   });
   describe('getRandomInteger', () => {
