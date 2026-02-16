@@ -1,4 +1,4 @@
-import{a as E,b as R,c as _,d as N,e as u,f as M,g as y,j as F,k as O,l as f,m as W,n as K}from"./chunk-D23Y7H3Q.js";var b=class{worker;encodeListeners=new Set;decodeListeners=new Set;boardListeners=new Map;terminated=!1;lastEncoded;constructor(){M("[BoardIdWorker] Starting Board ID worker"),this.worker=new Worker("./board_id_worker_entry.js",{type:"module",name:"BoardIdWorker"}),this.worker.onerror=e=>{y(`[BoardIdWorker.worker.onerror] Got error. Message: %o
+import{a as E,b as R,c as _,d as N,e as u,f as M,g as y,j as F,k as O,l as f,m as W,n as K}from"./chunk-6KYOLQSA.js";var b=class{worker;encodeListeners=new Set;decodeListeners=new Set;boardListeners=new Map;terminated=!1;lastEncoded;constructor(){M("[BoardIdWorker] Starting Board ID worker"),this.worker=new Worker("./board_id_worker_entry.js",{type:"module",name:"BoardIdWorker"}),this.worker.onerror=e=>{y(`[BoardIdWorker.worker.onerror] Got error. Message: %o
 Error: %o
 filename: % o
 lineno: % o
