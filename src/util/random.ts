@@ -1,3 +1,4 @@
+import {RandomOrgClient} from '@randomorg/core';
 import {assert} from './assert.js';
 
 export interface BitSource {
@@ -7,21 +8,6 @@ export interface BitSource {
    */
   next(): number;
 }
-
-// export class RandomOrgBitSource implements BitSource {
-//   const
-//   constructor() {}
-//   getLotsOfBits() {
-//     const request = new XMLHttpRequest();
-//     request.open(
-//       'GET',
-//       'https://www.random.org/cgi-bin/randbyte?nbytes=256&format=b',
-//       false
-//     );
-//     request.send(null);
-//     return request.responseText();
-//   }
-// }
 
 /**
  * The default, high(er) quality source of randomness
@@ -35,6 +21,48 @@ export class CryptoRandomBitSource implements BitSource {
       this.nextIndex = 0;
     }
     return this.nextIntegers[this.nextIndex++];
+  }
+}
+
+enum ExhaustionStrategyType {
+  ERROR,
+  LOOP,
+}
+
+type ExhaustionStrategy = ExhaustionStrategyType | BitSource;
+
+export class SeededBitSource implements BitSource {
+  constructor(
+    private source: number[],
+    private sourceCount = source.length,
+    private readonly exhaustionStrategy: ExhaustionStrategy = ExhaustionStrategyType.ERROR,
+  ) {}
+
+  next(): number {
+    if (this.sourceCount <= 0) {
+      switch (this.exhaustionStrategy) {
+        case ExhaustionStrategyType.ERROR:
+          throw new Error('Ran out of bits');
+        case ExhaustionStrategyType.LOOP:
+          this.sourceCount = this.source.length;
+          break;
+        default:
+          return this.exhaustionStrategy.next();
+      }
+    }
+    return this.source[--this.sourceCount];
+  }
+
+  static async fromRandomOrg(
+    apiKey: string,
+    sourceCount = 16,
+  ): Promise<SeededBitSource> {
+    const randomClient = new RandomOrgClient(apiKey, {
+      blockingTimeout: 60000,
+      httpTimeout: 10000,
+    });
+    const source = await randomClient.generateBlobs(1, sourceCount * 32);
+    return new SeededBitSource(source);
   }
 }
 
