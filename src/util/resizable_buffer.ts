@@ -3,8 +3,7 @@
  * perfect, but it gets the job done for now until
  * https://github.com/microsoft/TypeScript/pull/54637 is resolved.
  */
-export interface ResizableArrayBufferConstructor
-  extends ArrayBufferConstructor {
+export interface ResizableArrayBufferConstructor extends ArrayBufferConstructor {
   readonly prototype: ResizableArrayBuffer;
   new (
     byteLength: number,
