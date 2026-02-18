@@ -112,8 +112,8 @@ describe('Arithmetic Coding', () => {
         const bits = testRandom.getRandomBigBits(bitCount);
         const prob = testRandom.getRandomInteger(100, 1) / 100;
         const bitset = new BitSetWriter().writeBigBits(bits, bitCount).bitset;
-        let encoded: BitSet | undefined = undefined;
-        let decoded: BitSet | undefined = undefined;
+        let encoded: BitSet;
+        let decoded: BitSet | undefined;
         try {
           encoded = encode(bitset, prob);
           decoded = decode(encoded, prob, bitCount);
@@ -242,8 +242,8 @@ describe('Arithmetic Coding', () => {
         const bits = testRandom.getRandomBigBits(bitCount);
         const prob = testRandom.getRandomInteger(10, 1) / 10;
         const bitset = new BitSetWriter().writeBigBits(bits, bitCount).bitset;
-        let encoded: BitSet | undefined = undefined;
-        let decoded: BitSet | undefined = undefined;
+        let encoded: BitSet;
+        let decoded: BitSet | undefined;
         try {
           encoded = encode(bitset, prob);
           decoded = decode(encoded, prob, bitCount);

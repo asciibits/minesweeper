@@ -100,8 +100,8 @@ describe('Storage', () => {
       for (let i = 0; i < samples; i++) {
         const val = testRandom.getRandomBits(32) >> 0;
         const bitCount = testRandom.getRandomInteger(32, 1);
-        let encoded: BitSet | undefined = undefined;
-        let decoded: number | undefined = undefined;
+        let encoded: BitSet;
+        let decoded: number | undefined;
         try {
           encoded = encodeContinuous(val, bitCount);
           decoded = decodeContinuous(encoded.toReader(), bitCount);

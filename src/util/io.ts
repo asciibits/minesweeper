@@ -461,7 +461,6 @@ export class BitSet implements Iterable<Bit> {
         return end - firstStart;
       }
     }
-    bitPos = 0;
     this.length = Math.max(this._length, start);
     this.bits[bytePos] =
       (this.bits[bytePos] & ~mask) | Number((neg ? ~val : val) & BigInt(mask));

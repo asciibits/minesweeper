@@ -38,7 +38,7 @@ describe('Minesweeper Storage', () => {
           width,
           cellData,
         };
-        let encoded: EncodedBoardState | undefined = undefined;
+        let encoded: EncodedBoardState;
         let restoredBoardInfo: KnownBoardState | undefined = undefined;
         try {
           encoded = encodeBoardState(boardInfo);
@@ -154,7 +154,7 @@ describe('Minesweeper Storage', () => {
           width,
           cellData,
         };
-        let encoded: EncodedBoardState | undefined = undefined;
+        let encoded: EncodedBoardState;
         let restoredBoardInfo: KnownBoardState | undefined = undefined;
         try {
           encoded = encodeBoardState(boardInfo);

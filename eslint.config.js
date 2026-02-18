@@ -68,10 +68,6 @@ export default defineConfig([{
         "no-with": 2,
         "prefer-promise-reject-errors": 2,
 
-        "no-unused-vars": [2, {
-            args: "none",
-        }],
-
         "array-bracket-newline": "off",
         "array-bracket-spacing": [2, "never"],
         "array-element-newline": "off",

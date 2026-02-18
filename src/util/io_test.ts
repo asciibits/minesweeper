@@ -1012,15 +1012,6 @@ describe('BitSourceReader', () => {
     ]);
     expect(reader.readBatch(4)).toBe(0xe);
     expect(reader.readBigBits(72)).toBe(0xbaddeadbeefcafebabn);
-  });
-  it('returns bigint larger than 64 bits', () => {
-    const reader = new BitSourceReader([
-      {value: 0xcafebabe, bitCount: 32},
-      {value: 0xdeadbeef, bitCount: 32},
-      {value: 0xbad, bitCount: 12},
-    ]);
-    expect(reader.readBatch(4)).toBe(0xe);
-    expect(reader.readBigBits(72)).toBe(0xbaddeadbeefcafebabn);
     expect(reader.isClosed()).toBeTrue();
   });
   it('returns remaining bigint larger than 64 bits', () => {
