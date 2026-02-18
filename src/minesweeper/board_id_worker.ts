@@ -120,9 +120,7 @@ export class BoardIdWorker {
     assert(!this.terminated, 'BoardIdWorker has been terminated');
     const view = board.getView();
     if (this.lastEncoded?.view === view) {
-      for (const listener of this.encodeListeners) {
-        listener.handleEncodeResponse;
-      }
+      // TODO: optimize case where the board to encode is the same as before
     }
     const boardInfo = getBoardInfo(board);
     trace(
